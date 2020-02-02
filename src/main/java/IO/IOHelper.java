@@ -29,7 +29,8 @@ public class IOHelper {
             for (Node node : nodeSet) {
                 StringWriter writer = new StringWriter();
                 transformer.transform(new DOMSource(node), new StreamResult(writer));
-                System.out.println(writer.toString());
+                String output = writer.toString();
+                System.out.println(output.substring(output.indexOf("?>") + 2));
             }
         } catch (Exception e) {
             e.printStackTrace();
