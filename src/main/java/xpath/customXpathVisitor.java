@@ -1,7 +1,5 @@
 package xpath;
-
 import org.w3c.dom.Node;
-
 import java.util.LinkedList;
 
 
@@ -47,9 +45,9 @@ public class customXpathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
     }
     // rp / rp
     @Override public LinkedList<Node> visitRpChildren(xpathParser.RpChildrenContext ctx) {
-         visit(ctx.rp(0));
-         visit(ctx.rp(1));
-         return this.nodes;
+        visit(ctx.rp(0));
+        visit(ctx.rp(1));
+        return this.nodes;
     }
 
     @Override public LinkedList<Node> visitRpTag(xpathParser.RpTagContext ctx) {
@@ -160,7 +158,7 @@ public class customXpathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
 
     @Override public LinkedList<Node> visitFOr(xpathParser.FOrContext ctx) {
         if (visit(ctx.f(0)).isEmpty() && visit(ctx.f(1)).isEmpty())
-                return this.nodes;
+            return this.nodes;
         return new LinkedList<>();
     }
 
@@ -193,4 +191,3 @@ public class customXpathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
         return visitChildren(ctx);
     }
 }
-

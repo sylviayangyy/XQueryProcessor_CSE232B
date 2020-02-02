@@ -19,12 +19,13 @@ public class IOHelper {
             Transformer transformer = tf.newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 
-            Set<Node> nodeSet = new HashSet<Node>();
+            Set<Node> nodeSet = new HashSet<>();
             for (Node node : nodes) {
                 if (!nodeSet.contains(node)) {
                     nodeSet.add(node);
                 }
             }
+            System.out.println("Output: ");
             for (Node node : nodeSet) {
                 StringWriter writer = new StringWriter();
                 transformer.transform(new DOMSource(node), new StreamResult(writer));

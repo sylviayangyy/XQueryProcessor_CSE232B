@@ -5,7 +5,10 @@ import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -15,7 +18,8 @@ public class XMLTreeProcessor {
         try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-            Document document = docBuilder.parse(new InputSource(new FileInputStream(fileName)));
+            InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(fileName);
+            Document document = docBuilder.parse(new InputSource(inputStream));
             Element root = document.getDocumentElement();
             root.normalize();
             nodes.add(root);
@@ -134,4 +138,3 @@ public class XMLTreeProcessor {
         return false;
     }
 }
-

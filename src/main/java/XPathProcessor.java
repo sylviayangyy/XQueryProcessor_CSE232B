@@ -6,10 +6,8 @@ import xpath.customXpathVisitor;
 import xpath.xpathLexer;
 import xpath.xpathParser;
 
-import java.io.IOException;
-
 public class XPathProcessor {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         String xpath = args[0];
         ANTLRInputStream input = new ANTLRInputStream(xpath);
         xpathLexer lexer = new xpathLexer(input);
