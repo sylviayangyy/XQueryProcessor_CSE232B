@@ -1,5 +1,7 @@
 package xpath;
 import org.w3c.dom.Node;
+
+import java.util.HashSet;
 import java.util.LinkedList;
 
 
@@ -78,12 +80,13 @@ public class customXpathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
     }
 
     @Override public LinkedList<Node> visitRpAll(xpathParser.RpAllContext ctx) {
-        LinkedList<Node> temp = visit(ctx.rp(0));
+        visit(ctx.rp(0));
+        LinkedList<Node> temp = new LinkedList<>();
         for (Node node : this.nodes) {
             temp.addAll(xml.getDescendantOrSelf(node));
         }
         this.nodes = temp;
-        this.nodes = visit(ctx.rp(1));
+        visit(ctx.rp(1));
         return this.nodes;
     }
 
@@ -127,10 +130,14 @@ public class customXpathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
     }
 
     @Override public LinkedList<Node> visitFNot(xpathParser.FNotContext ctx) {
-        if (visit(ctx.f()).isEmpty()) {
-            return this.nodes;
-        }
-        return new LinkedList<>();
+        HashSet<Node> leftSet = new HashSet<Node>(this.nodes);
+        HashSet<Node> rightSet = new HashSet<Node>(visit(ctx.f()));
+        HashSet<Node> difference = new HashSet<Node>();
+        difference.addAll(leftSet);
+        difference.removeAll(rightSet);
+
+        LinkedList<Node> results = new LinkedList<Node>(difference);
+        return results;
     }
 
     @Override public LinkedList<Node> visitFRp(xpathParser.FRpContext ctx) {
