@@ -25,6 +25,7 @@ public class XQueryProcessor {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         xqueryParser parser = new xqueryParser(tokens);
         ParseTree tree = parser.xq();
-        System.out.println(tree.toStringTree());
+//        System.out.println(tree.toStringTree());
+
     }
 }

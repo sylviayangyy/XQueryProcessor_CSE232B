@@ -5,10 +5,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 
-public class customXpathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
+public class CustomXpathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
     LinkedList<Node> nodes;
     XMLTreeProcessor xml;
-    public customXpathVisitor() {
+    public CustomXpathVisitor() {
         nodes = new LinkedList<>();
         xml = new XMLTreeProcessor();
     }
