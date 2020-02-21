@@ -2,16 +2,16 @@ grammar xquery;
 import xpath;
 
 xq
-    : Var
-    | StringConstant
-    | ap
-    | '(' xq ')'
-    | xq ',' xq
-    | xq '/' rp
-    | xq '//' rp
-    | '<' tagName '>{' xq '}</' tagName '>'
-    | forClause letClause? whereClause? returnClause
-    | letClause xq
+    : Var                                               # xqVar
+    | StringConstant                                    # xqStringConstant
+    | ap                                                # xqAp
+    | '(' xq ')'                                        # xqParentheses
+    | xq ',' xq                                         # xqCollection
+    | xq '/' rp                                         # xqChildren
+    | xq '//' rp                                        # xqAll
+    | '<' tagName '>{' xq '}</' tagName '>'             # xqTag
+    | forClause letClause? whereClause? returnClause    # xqFLWR
+    | letClause xq                                      # xqLet
     ;
 
 forClause
@@ -31,16 +31,14 @@ returnClause
     ;
 
 cond
-    : xq '=' xq
-    | xq 'eq' xq
-    | xq '==' xq
-    | xq 'is' xq
-    | 'empty(' xq ')'
-    | 'some' Var 'in' xq (',' Var 'in' xq)* 'satisfies' cond
-    |  '(' cond ')'
-    | cond 'and' cond
-    | cond 'or' cond
-    | 'not' cond
+    : xq ('=' | 'eq') xq                                         # condValueEquality
+    | xq ('==' | 'is') xq                                        # condEquality
+    | 'empty(' xq ')'                                            # condEmpty
+    | 'some' Var 'in' xq (',' Var 'in' xq)* 'satisfies' cond     # condSome
+    |  '(' cond ')'                                              # condParentheses
+    | cond 'and' cond                                            # condAnd
+    | cond 'or' cond                                             # condOr
+    | 'not' cond                                                 # condNot
     ;
 
 Var: '$' Letter (Letter | Digit | '-')*;
