@@ -9,7 +9,7 @@ xq
     | xq ',' xq                                         # xqCollection
     | xq '/' rp                                         # xqChildren
     | xq '//' rp                                        # xqAll
-    | '<' tagName '>{' xq '}</' tagName '>'             # xqTag
+    | '<' tagName '>' '{' xq '}' '</' tagName '>'             # xqTag
     | forClause letClause? whereClause? returnClause    # xqFLWR
     | letClause xq                                      # xqLet
     ;
@@ -33,7 +33,7 @@ returnClause
 cond
     : xq ('=' | 'eq') xq                                         # condValueEquality
     | xq ('==' | 'is') xq                                        # condEquality
-    | 'empty(' xq ')'                                            # condEmpty
+    | 'empty' '(' xq ')'                                            # condEmpty
     | 'some' Var 'in' xq (',' Var 'in' xq)* 'satisfies' cond     # condSome
     |  '(' cond ')'                                              # condParentheses
     | cond 'and' cond                                            # condAnd
@@ -43,4 +43,3 @@ cond
 
 Var: '$' Letter (Letter | Digit | '-')*;
 
-StringConstant: (Letter | Digit | '_' | '.')*;
