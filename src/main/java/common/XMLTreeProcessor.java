@@ -133,7 +133,7 @@ public class XMLTreeProcessor {
         return node.getNodeName();
     }
 
-    public static boolean isEqual(LinkedList<Node> nodes1, LinkedList<Node> nodes2) {
+    public boolean isEqual(LinkedList<Node> nodes1, LinkedList<Node> nodes2) {
         for (Node n1 : nodes1) {
             for (Node n2 : nodes2) {
                 if (n1.isEqualNode(n2)) {
@@ -144,7 +144,7 @@ public class XMLTreeProcessor {
         return false;
     }
 
-    public static boolean isSame(LinkedList<Node> nodes1, LinkedList<Node> nodes2) {
+    public boolean isSame(LinkedList<Node> nodes1, LinkedList<Node> nodes2) {
         for (Node n1 : nodes1) {
             for (Node n2 : nodes2) {
                 if (n1.isSameNode(n2)) {
