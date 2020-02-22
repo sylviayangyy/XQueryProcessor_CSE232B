@@ -1,14 +1,14 @@
 package xpath;
+import common.XMLTreeProcessor;
 import org.w3c.dom.Node;
-
 import java.util.HashSet;
 import java.util.LinkedList;
 
 
-public class CustomXpathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
+public class CustomXPathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
     LinkedList<Node> nodes;
     XMLTreeProcessor xml;
-    public CustomXpathVisitor() {
+    public CustomXPathVisitor() {
         nodes = new LinkedList<>();
         xml = new XMLTreeProcessor();
     }

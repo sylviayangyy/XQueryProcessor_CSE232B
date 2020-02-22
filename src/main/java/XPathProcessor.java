@@ -2,7 +2,7 @@ import IO.IOHelper;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import xpath.CustomXpathVisitor;
+import xpath.CustomXPathVisitor;
 import xpath.xpathLexer;
 import xpath.xpathParser;
 
@@ -15,7 +15,7 @@ public class XPathProcessor {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         xpathParser parser = new xpathParser(tokens);
         ParseTree tree = parser.ap();
-        CustomXpathVisitor xPathVisitor = new CustomXpathVisitor();
+        CustomXPathVisitor xPathVisitor = new CustomXPathVisitor();
         xPathVisitor.visit(tree);
         IOHelper.outputResult(xPathVisitor.visit(tree));
     }

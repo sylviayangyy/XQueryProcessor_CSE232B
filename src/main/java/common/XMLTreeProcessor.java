@@ -1,10 +1,12 @@
-package xpath;
+package common;
 
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
+import javax.print.Doc;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -13,6 +15,19 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class XMLTreeProcessor {
+    private Document document;
+
+    public XMLTreeProcessor() {
+        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        try {
+            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+            this.document = documentBuilder.newDocument();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+            System.out.println("documentBuilder error in XMLTreeProcessor Class");
+        }
+    }
+
     public LinkedList<Node> getRoot(String fileName) {
         LinkedList<Node> nodes = new LinkedList<>();
         try {
@@ -136,5 +151,21 @@ public class XMLTreeProcessor {
             }
         }
         return false;
+    }
+
+    public LinkedList<Node> singleNodeToList(Node node) {
+        LinkedList<Node> nodeLinkedList = new LinkedList<>();
+        if (node!=null) {
+            nodeLinkedList.add(node);
+        }
+        return nodeLinkedList;
+    }
+
+    public Node makeElem(String tagName, LinkedList<Node> nodes) {
+        return null;
+    }
+
+    public Node makeText(String stringConstant) {
+        return null;
     }
 }
