@@ -169,7 +169,7 @@ public class XMLTreeProcessor {
             Node curNode = document.importNode(node, true);
             if (curNode.getNodeType() == Node.ATTRIBUTE_NODE) {
                 elementNode.setAttributeNode((Attr) curNode);
-            } else if (curNode.getNodeType() == Node.ELEMENT_NODE) {
+            } else {
                 elementNode.appendChild(curNode);
             }
         }
