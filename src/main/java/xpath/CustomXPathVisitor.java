@@ -167,8 +167,8 @@ public class CustomXPathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
 
     @Override public LinkedList<Node> visitFOr(xpathParser.FOrContext ctx) {
         if (visit(ctx.f(0)).isEmpty() && visit(ctx.f(1)).isEmpty())
-            return this.nodes;
-        return new LinkedList<>();
+            return new LinkedList<>();
+        return this.nodes;
     }
 
     @Override public LinkedList<Node> visitFValueEquality(xpathParser.FValueEqualityContext ctx) {
@@ -183,8 +183,8 @@ public class CustomXPathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
 
     @Override public LinkedList<Node> visitFAnd(xpathParser.FAndContext ctx) {
         if (visit(ctx.f(0)).isEmpty() || visit(ctx.f(1)).isEmpty())
-            return this.nodes;
-        return new LinkedList<>();
+            return new LinkedList<>();
+        return this.nodes;
     }
 
     @Override public LinkedList<Node> visitApFileName(xpathParser.ApFileNameContext ctx) {

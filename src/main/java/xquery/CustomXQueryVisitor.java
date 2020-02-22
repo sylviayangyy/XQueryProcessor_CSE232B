@@ -48,6 +48,8 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
                 if (visit(ctx.whereClause()).size()>0 ) {
                     nodes.addAll(visit(ctx.returnClause()));
                 }
+            } else {
+                nodes.addAll(visit(ctx.returnClause()));
             }
             this.variables = tempVarsBeforeLetClause;
         } else {
@@ -215,15 +217,15 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
     @Override
     public LinkedList<Node> visitCondAnd(xqueryParser.CondAndContext ctx) {
         if (visit(ctx.cond(0)).isEmpty() || visit(ctx.cond(1)).isEmpty())
-            return this.nodes;
-        return new LinkedList<>();
+            return new LinkedList<>();;
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitCondOr(xqueryParser.CondOrContext ctx) {
         if (visit(ctx.cond(0)).isEmpty() && visit(ctx.cond(1)).isEmpty())
-            return this.nodes;
-        return new LinkedList<>();
+            return new LinkedList<>();
+        return this.nodes;
     }
 
     @Override
