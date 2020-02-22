@@ -33,6 +33,7 @@ public class IOHelper {
                 transformer.transform(new DOMSource(node), new StreamResult(writer));
                 String output = writer.toString();
                 System.out.println(output.substring(output.indexOf("?>") + 2));
+//                System.out.println(output);
             }
         } catch (Exception e) {
             e.printStackTrace();

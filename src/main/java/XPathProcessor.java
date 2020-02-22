@@ -16,7 +16,7 @@ public class XPathProcessor {
         xpathParser parser = new xpathParser(tokens);
         ParseTree tree = parser.ap();
         CustomXPathVisitor xPathVisitor = new CustomXPathVisitor();
-        xPathVisitor.visit(tree);
+//        xPathVisitor.visit(tree);
         IOHelper.outputResult(xPathVisitor.visit(tree));
     }
 }

@@ -68,7 +68,8 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
             temp.addAll(xml.getDescendantOrSelf(node));
         }
         this.nodes = temp;
-        this.nodes = xml.unique(temp);
+        visit(ctx.rp());
+        this.nodes = xml.unique(this.nodes);
         return this.nodes;
     }
 
@@ -115,7 +116,7 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
             LinkedList<Node> xquery = visit(ctx.xq());
             nodes.add(xml.makeElem(tagName1, xquery));
         } else {
-            System.out.println("mismatch for <> !!!");
+            System.out.println("mismatch for <> in visitXqTag!!!");
         }
         return this.nodes = nodes;
     }
@@ -123,18 +124,14 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
     @Override
     public LinkedList<Node> visitXqChildren(xqueryParser.XqChildrenContext ctx) {
         visit(ctx.xq());
-        LinkedList<Node> temp = new LinkedList<>();
-        for (Node node : this.nodes) {
-            temp.addAll(xml.getChildren(node));
-        }
-        this.nodes = temp;
-        this.nodes = xml.unique(temp);
+        visit(ctx.rp());
+        this.nodes = xml.unique(this.nodes);
         return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitForClause(xqueryParser.ForClauseContext ctx) {
-        return super.visitForClause(ctx);
+        return null;
     }
 
     @Override
