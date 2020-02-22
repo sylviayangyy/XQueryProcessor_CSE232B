@@ -49,6 +49,7 @@ public class CustomXPathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
     @Override public LinkedList<Node> visitRpChildren(xpathParser.RpChildrenContext ctx) {
         visit(ctx.rp(0));
         visit(ctx.rp(1));
+        this.nodes = xml.unique(this.nodes);
         return this.nodes;
     }
 
@@ -87,6 +88,7 @@ public class CustomXPathVisitor extends xpathBaseVisitor<LinkedList<Node>> {
         }
         this.nodes = temp;
         visit(ctx.rp(1));
+        this.nodes = xml.unique(this.nodes);
         return this.nodes;
     }
 

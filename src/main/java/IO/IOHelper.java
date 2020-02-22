@@ -19,14 +19,16 @@ public class IOHelper {
             Transformer transformer = tf.newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 
-            Set<Node> nodeSet = new HashSet<>();
-            for (Node node : nodes) {
-                if (!nodeSet.contains(node)) {
-                    nodeSet.add(node);
-                }
-            }
+//            System.out.println("origin size: " + nodes.size());
+//            Set<Node> nodeSet = new HashSet<>();
+//            for (Node node : nodes) {
+//                if (!nodeSet.contains(node)) {
+//                    nodeSet.add(node);
+//                }
+//            }
+//            System.out.println("unique size: " + nodeSet.size());
             System.out.println("Output: ");
-            for (Node node : nodeSet) {
+            for (Node node : nodes) {
                 StringWriter writer = new StringWriter();
                 transformer.transform(new DOMSource(node), new StreamResult(writer));
                 String output = writer.toString();

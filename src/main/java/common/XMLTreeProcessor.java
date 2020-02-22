@@ -11,8 +11,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 public class XMLTreeProcessor {
     private Document document;
@@ -46,13 +48,13 @@ public class XMLTreeProcessor {
 
     public LinkedList<Node> getChildren(Node node) {
         LinkedList<Node> nodes = new LinkedList<>();
-        if (node==null) {
+        if (node == null) {
             return nodes;
         }
         NodeList children = node.getChildNodes();
-        for (int i=0; i<children.getLength(); i++) {
+        for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
-            if (child!=null) {
+            if (child != null) {
                 nodes.add(child);
             }
         }
@@ -61,11 +63,11 @@ public class XMLTreeProcessor {
 
     public LinkedList<Node> getParent(Node node) {
         LinkedList<Node> nodes = new LinkedList<>();
-        if (node==null) {
+        if (node == null) {
             return nodes;
         }
         if (node.getNodeType() == Node.ATTRIBUTE_NODE) {
-            Element parent = ((Attr)node).getOwnerElement();
+            Element parent = ((Attr) node).getOwnerElement();
             nodes.add(parent);
         } else {
             Node parent = node.getParentNode();
@@ -83,7 +85,7 @@ public class XMLTreeProcessor {
         ((LinkedList<Node>) queue).add(node);
         while (!queue.isEmpty()) {
             Node n = queue.remove();
-            if (n!=null) {
+            if (n != null) {
                 nodes.add(n);
             }
             LinkedList<Node> children = this.getChildren(n);
@@ -96,12 +98,12 @@ public class XMLTreeProcessor {
 
     public LinkedList<Node> getTextNodes(Node node) {
         LinkedList<Node> nodes = new LinkedList<>();
-        if (node==null) {
+        if (node == null) {
             return nodes;
         }
         LinkedList<Node> children = this.getChildren(node);
         for (Node child : children) {
-            if (child.getNodeType()==Node.TEXT_NODE && child.getTextContent()!=null && child.getTextContent().length()!=0) {
+            if (child.getNodeType() == Node.TEXT_NODE && child.getTextContent() != null && child.getTextContent().length() != 0) {
                 nodes.add(child);
             }
         }
@@ -110,13 +112,13 @@ public class XMLTreeProcessor {
 
     public LinkedList<Node> getAttributeNode(Node node, String attribute) {
         LinkedList<Node> nodes = new LinkedList<>();
-        if (node ==null) {
+        if (node == null) {
             return nodes;
         }
         if (node.getNodeType() != Node.ELEMENT_NODE) {
             return nodes;
         }
-        if (!((Element)node).hasAttribute(attribute)) {
+        if (!((Element) node).hasAttribute(attribute)) {
             return nodes;
         }
         Node attributeNode = ((Element) node).getAttributeNode(attribute);
@@ -125,15 +127,15 @@ public class XMLTreeProcessor {
     }
 
     public String getTagName(Node node) {
-        if (node==null) {
+        if (node == null) {
             return "";
         }
         return node.getNodeName();
     }
 
     public static boolean isEqual(LinkedList<Node> nodes1, LinkedList<Node> nodes2) {
-        for (Node n1: nodes1) {
-            for (Node n2: nodes2) {
+        for (Node n1 : nodes1) {
+            for (Node n2 : nodes2) {
                 if (n1.isEqualNode(n2)) {
                     return true;
                 }
@@ -143,8 +145,8 @@ public class XMLTreeProcessor {
     }
 
     public static boolean isSame(LinkedList<Node> nodes1, LinkedList<Node> nodes2) {
-        for (Node n1: nodes1) {
-            for (Node n2: nodes2) {
+        for (Node n1 : nodes1) {
+            for (Node n2 : nodes2) {
                 if (n1.isSameNode(n2)) {
                     return true;
                 }
@@ -155,17 +157,31 @@ public class XMLTreeProcessor {
 
     public LinkedList<Node> singleNodeToList(Node node) {
         LinkedList<Node> nodeLinkedList = new LinkedList<>();
-        if (node!=null) {
+        if (node != null) {
             nodeLinkedList.add(node);
         }
         return nodeLinkedList;
     }
 
     public Node makeElem(String tagName, LinkedList<Node> nodes) {
-        return null;
+        Element elementNode = document.createElement(tagName);
+        for (Node node : nodes) {
+            Node curNode = document.importNode(node, true);
+            if (curNode.getNodeType() == Node.ATTRIBUTE_NODE) {
+                elementNode.setAttributeNode((Attr) curNode);
+            } else if (curNode.getNodeType() == Node.ELEMENT_NODE) {
+                elementNode.appendChild(curNode);
+            }
+        }
+        return elementNode;
     }
 
     public Node makeText(String stringConstant) {
-        return null;
+        return document.createTextNode(stringConstant);
+    }
+
+    public LinkedList<Node> unique(LinkedList<Node> nodes) {
+        Set<Node> nodeSet = new HashSet<>(nodes);
+        return new LinkedList<>(nodeSet);
     }
 }

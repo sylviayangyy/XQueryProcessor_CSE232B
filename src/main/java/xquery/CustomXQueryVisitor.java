@@ -1,10 +1,17 @@
 package xquery;
 
+import common.XMLTreeProcessor;
 import org.w3c.dom.Node;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
+    LinkedList<Node> nodes = new LinkedList<>();
+    Map<String, LinkedList<Node>> variables = new HashMap<>();
+    XMLTreeProcessor xml = new XMLTreeProcessor();
+
     @Override
     public LinkedList<Node> visitXqAp(xqueryParser.XqApContext ctx) {
         return super.visitXqAp(ctx);
@@ -17,12 +24,46 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
 
     @Override
     public LinkedList<Node> visitXqFLWR(xqueryParser.XqFLWRContext ctx) {
-        return super.visitXqFLWR(ctx);
+        LinkedList<Node> nodes = new LinkedList<>();
+        Map<String, LinkedList<Node>> tempVarsBeforeForClause = new HashMap<>(this.variables);
+        forLoops(0, ctx.forClause().Var().size(), nodes, ctx);
+        this.variables = tempVarsBeforeForClause;
+        this.nodes = nodes;
+        return this.nodes;
+    }
+
+    private void forLoops(int curVarNum, int totalVarNum, LinkedList<Node> nodes, xqueryParser.XqFLWRContext ctx) {
+        if (curVarNum == totalVarNum) {
+            Map<String, LinkedList<Node>> tempVarsBeforeLetClause = new HashMap<>(this.variables);
+            if (ctx.letClause()!=null) {
+                visit(ctx.letClause());
+            }
+            if (ctx.whereClause()!=null) {
+                if (visit(ctx.whereClause()).size()>0 ) {
+                    nodes.addAll(visit(ctx.returnClause()));
+                }
+            }
+            this.variables = tempVarsBeforeLetClause;
+        } else {
+            String varName = ctx.forClause().Var(curVarNum).getText();
+            LinkedList<Node> varValue = visit(ctx.forClause().xq(curVarNum));
+            for (Node node : varValue) {
+                this.variables.put(varName, xml.singleNodeToList(node));
+                forLoops(curVarNum+1, totalVarNum, nodes, ctx);
+            }
+        }
     }
 
     @Override
     public LinkedList<Node> visitXqAll(xqueryParser.XqAllContext ctx) {
-        return super.visitXqAll(ctx);
+        visit(ctx.xq());
+        LinkedList<Node> temp = new LinkedList<>();
+        for (Node node : this.nodes) {
+            temp.addAll(xml.getDescendantOrSelf(node));
+        }
+        this.nodes = temp;
+        this.nodes = xml.unique(temp);
+        return this.nodes;
     }
 
     @Override
@@ -52,7 +93,14 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
 
     @Override
     public LinkedList<Node> visitXqChildren(xqueryParser.XqChildrenContext ctx) {
-        return super.visitXqChildren(ctx);
+        visit(ctx.xq());
+        LinkedList<Node> temp = new LinkedList<>();
+        for (Node node : this.nodes) {
+            temp.addAll(xml.getChildren(node));
+        }
+        this.nodes = temp;
+        this.nodes = xml.unique(temp);
+        return this.nodes;
     }
 
     @Override
