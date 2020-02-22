@@ -1,18 +1,38 @@
 package xquery;
 
 import org.w3c.dom.Node;
+import common.XMLTreeProcessor;
+import xpath.CustomXPathVisitor;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 
 public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
+    LinkedList<Node> nodes;
+    Map<String, LinkedList<Node>> variables;
+    XMLTreeProcessor xml;
+
+    public CustomXQueryVisitor() {
+        nodes = new LinkedList<>();
+        variables = new HashMap<>();
+        xml = new XMLTreeProcessor();
+    }
+
     @Override
     public LinkedList<Node> visitXqAp(xqueryParser.XqApContext ctx) {
-        return super.visitXqAp(ctx);
+        return visit(ctx.ap());
     }
 
     @Override
     public LinkedList<Node> visitXqVar(xqueryParser.XqVarContext ctx) {
-        return super.visitXqVar(ctx);
+        String var = ctx.Var().getText();
+        if (variables.containsKey(var)) {
+            this.nodes = variables.get(var);
+        } else
+            this.nodes = new LinkedList<>();
+        return this.nodes;
     }
 
     @Override
@@ -22,32 +42,56 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
 
     @Override
     public LinkedList<Node> visitXqAll(xqueryParser.XqAllContext ctx) {
-        return super.visitXqAll(ctx);
+
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitXqParentheses(xqueryParser.XqParenthesesContext ctx) {
-        return super.visitXqParentheses(ctx);
+        visit(ctx.xq());
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitXqCollection(xqueryParser.XqCollectionContext ctx) {
-        return super.visitXqCollection(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        LinkedList<Node> origin = this.nodes;
+        visit(ctx.xq(0));
+        temp.addAll(this.nodes);
+        this.nodes = origin;
+        visit(ctx.xq(1));
+        temp.addAll(this.nodes);
+        return this.nodes = temp;
     }
 
     @Override
     public LinkedList<Node> visitXqStringConstant(xqueryParser.XqStringConstantContext ctx) {
-        return super.visitXqStringConstant(ctx);
+        String constant0 = ctx.StringConstant().getText();
+        String constant = constant0.substring(1, constant0.length() - 1);
+        return this.nodes = xml.singleNodeToList(xml.makeText(constant));
     }
 
     @Override
     public LinkedList<Node> visitXqLet(xqueryParser.XqLetContext ctx) {
-        return super.visitXqLet(ctx);
+        HashMap<String, LinkedList<Node>> map = new HashMap<>(this.variables);
+        visit(ctx.letClause());
+        visit(ctx.xq());
+        this.variables = map;
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitXqTag(xqueryParser.XqTagContext ctx) {
-        return super.visitXqTag(ctx);
+        LinkedList<Node> nodes = new LinkedList<>();
+        String tagName1 = ctx.tagName(0).getText();
+        String tagName2 = ctx.tagName(1).getText();
+        if (tagName1.equals(tagName2)) {
+            LinkedList<Node> xquery = visit(ctx.xq());
+            nodes.add(xml.makeElem(tagName1, xquery));
+        } else {
+            System.out.println("mismatch for <> !!!");
+        }
+        return this.nodes = nodes;
     }
 
     @Override
@@ -61,163 +105,305 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
     }
 
     @Override
+    // [let Var_1 := xq_1, ..., Var_n := xq_n](C)
     public LinkedList<Node> visitLetClause(xqueryParser.LetClauseContext ctx) {
-        return super.visitLetClause(ctx);
+        for (int i = 0; i < ctx.Var().size(); i++) {
+            Map<String, LinkedList<Node>> map = new HashMap<>(this.variables);
+            LinkedList<Node> xq = visit(ctx.xq(i));
+            this.variables = map;
+            this.variables.put(ctx.Var(i).getText(), xq);
+        }
+        return null;
     }
 
     @Override
     public LinkedList<Node> visitWhereClause(xqueryParser.WhereClauseContext ctx) {
-        return super.visitWhereClause(ctx);
+        return visit(ctx.cond());
     }
 
     @Override
     public LinkedList<Node> visitReturnClause(xqueryParser.ReturnClauseContext ctx) {
-        return super.visitReturnClause(ctx);
+        return visit(ctx.xq());
     }
 
     @Override
     public LinkedList<Node> visitCondEmpty(xqueryParser.CondEmptyContext ctx) {
-        return super.visitCondEmpty(ctx);
+        LinkedList<Node> nodes = this.nodes;
+        LinkedList<Node> xq = visit(ctx.xq());
+        if (xq.isEmpty()) {
+            return this.nodes = nodes;
+        }
+        else return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitCondParentheses(xqueryParser.CondParenthesesContext ctx) {
-        return super.visitCondParentheses(ctx);
+        return visit(ctx.cond());
     }
 
     @Override
     public LinkedList<Node> visitCondSome(xqueryParser.CondSomeContext ctx) {
-        return super.visitCondSome(ctx);
+        HashMap<String, LinkedList<Node>> map = new HashMap<>(this.variables);
+        LinkedList<Node> nodes = this.nodes;
+        for (int i = 0; i < ctx.Var().size(); ++i) {
+            String varName = ctx.Var(i).getText();
+            LinkedList<Node> xq = visit(ctx.xq(i));
+            this.variables.put(varName, xq);
+        }
+        LinkedList<Node> cond = visit(ctx.cond());
+        this.variables = map;
+        this.nodes = nodes;
+        return cond;
     }
 
     @Override
     public LinkedList<Node> visitCondEquality(xqueryParser.CondEqualityContext ctx) {
-        return super.visitCondEquality(ctx);
+        LinkedList<Node> nodes = this.nodes;
+        LinkedList<Node> xq1 = visit(ctx.xq(0));
+        this.nodes = nodes;
+        LinkedList<Node> xq2 = visit(ctx.xq(1));
+        this.nodes = nodes;
+        if (xml.isSame(xq1, xq2)) {
+            return this.nodes;
+        }
+        return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitCondValueEquality(xqueryParser.CondValueEqualityContext ctx) {
-        return super.visitCondValueEquality(ctx);
+        LinkedList<Node> nodes = this.nodes;
+        LinkedList<Node> xq1 = visit(ctx.xq(0));
+        this.nodes = nodes;
+        LinkedList<Node> xq2 = visit(ctx.xq(1));
+        this.nodes = nodes;
+        if (xml.isEqual(xq1, xq2)) {
+            return this.nodes;
+        }
+        return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitCondAnd(xqueryParser.CondAndContext ctx) {
-        return super.visitCondAnd(ctx);
+        if (visit(ctx.cond(0)).isEmpty() || visit(ctx.cond(1)).isEmpty())
+            return this.nodes;
+        return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitCondOr(xqueryParser.CondOrContext ctx) {
-        return super.visitCondOr(ctx);
+        if (visit(ctx.cond(0)).isEmpty() && visit(ctx.cond(1)).isEmpty())
+            return this.nodes;
+        return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitCondNot(xqueryParser.CondNotContext ctx) {
-        return super.visitCondNot(ctx);
+        HashSet<Node> leftSet = new HashSet<Node>(this.nodes);
+        HashSet<Node> rightSet = new HashSet<Node>(visit(ctx.cond()));
+        HashSet<Node> difference = new HashSet<Node>();
+        difference.addAll(leftSet);
+        difference.removeAll(rightSet);
+
+        LinkedList<Node> results = new LinkedList<Node>(difference);
+        return results;
     }
 
     @Override
     public LinkedList<Node> visitApChildren(xqueryParser.ApChildrenContext ctx) {
-        return super.visitApChildren(ctx);
+        visit(ctx.fileName());
+        this.nodes = visit(ctx.rp());
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitApAll(xqueryParser.ApAllContext ctx) {
-        return super.visitApAll(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        visit(ctx.fileName());
+        for (Node node : this.nodes) {
+            temp.addAll(xml.getDescendantOrSelf(node));
+        }
+        this.nodes = temp;
+        visit(ctx.rp());
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitRpText(xqueryParser.RpTextContext ctx) {
-        return super.visitRpText(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        for (Node node : this.nodes) {
+            temp.addAll(xml.getTextNodes(node));
+        }
+        return this.nodes = temp;
     }
 
     @Override
     public LinkedList<Node> visitRpAny(xqueryParser.RpAnyContext ctx) {
-        return super.visitRpAny(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        for (Node node : this.nodes) {
+            temp.addAll(xml.getChildren(node));
+        }
+        return this.nodes = temp;
     }
 
     @Override
     public LinkedList<Node> visitRpChildren(xqueryParser.RpChildrenContext ctx) {
-        return super.visitRpChildren(ctx);
+        visit(ctx.rp(0));
+        visit(ctx.rp(1));
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitRpTag(xqueryParser.RpTagContext ctx) {
-        return super.visitRpTag(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        String tagName = ctx.tagName().getText();
+
+        for (Node node : this.nodes) {
+            LinkedList<Node> children = xml.getChildren(node);
+            for (Node child : children) {
+                if (child.getNodeName().equals(tagName))
+                    temp.add(child);
+            }
+        }
+        return this.nodes = temp;
     }
 
     @Override
     public LinkedList<Node> visitRpParent(xqueryParser.RpParentContext ctx) {
-        return super.visitRpParent(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        for (Node node : this.nodes) {
+            temp.addAll(xml.getParent(node));
+        }
+        return this.nodes = temp;
     }
 
     @Override
     public LinkedList<Node> visitRpParentheses(xqueryParser.RpParenthesesContext ctx) {
-        return super.visitRpParentheses(ctx);
+        visit(ctx.rp());
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitRpAll(xqueryParser.RpAllContext ctx) {
-        return super.visitRpAll(ctx);
+        visit(ctx.rp(0));
+        LinkedList<Node> temp = new LinkedList<>();
+        for (Node node : this.nodes) {
+            temp.addAll(xml.getDescendantOrSelf(node));
+        }
+        this.nodes = temp;
+        visit(ctx.rp(1));
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitRpCurrent(xqueryParser.RpCurrentContext ctx) {
-        return super.visitRpCurrent(ctx);
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitRpFilter(xqueryParser.RpFilterContext ctx) {
-        return super.visitRpFilter(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        visit(ctx.rp());
+        LinkedList<Node> rps = this.nodes;
+        for (Node rp : rps) {
+            this.nodes = new LinkedList<>();
+            if (rp != null)
+                this.nodes.add(rp);
+            if (!visit(ctx.f()).isEmpty()) {
+                temp.add(rp);
+            }
+        }
+        return this.nodes = temp;
     }
 
     @Override
     public LinkedList<Node> visitRpAttribute(xqueryParser.RpAttributeContext ctx) {
-        return super.visitRpAttribute(ctx);
+        String name = ctx.attName().getText();
+        LinkedList<Node> temp = new LinkedList<>();
+        for (Node node : this.nodes) {
+            temp.addAll(xml.getAttributeNode(node, name));
+        }
+        return this.nodes = temp;
     }
 
     @Override
     public LinkedList<Node> visitRpCollection(xqueryParser.RpCollectionContext ctx) {
-        return super.visitRpCollection(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        LinkedList<Node> origin = this.nodes;
+        visit(ctx.rp(0));
+        temp.addAll(this.nodes);
+        this.nodes = origin;
+        visit(ctx.rp(1));
+        temp.addAll(this.nodes);
+        return this.nodes = temp;
     }
 
     @Override
     public LinkedList<Node> visitFNot(xqueryParser.FNotContext ctx) {
-        return super.visitFNot(ctx);
+        HashSet<Node> leftSet = new HashSet<Node>(this.nodes);
+        HashSet<Node> rightSet = new HashSet<Node>(visit(ctx.f()));
+        HashSet<Node> difference = new HashSet<Node>();
+        difference.addAll(leftSet);
+        difference.removeAll(rightSet);
+
+        LinkedList<Node> results = new LinkedList<Node>(difference);
+        return results;
     }
 
     @Override
     public LinkedList<Node> visitFRp(xqueryParser.FRpContext ctx) {
-        return super.visitFRp(ctx);
+        LinkedList<Node> temp = new LinkedList<>();
+        LinkedList<Node> origin = this.nodes;
+        temp = visit(ctx.rp());
+        this.nodes = origin;
+        return temp;
     }
 
     @Override
     public LinkedList<Node> visitFEquality(xqueryParser.FEqualityContext ctx) {
-        return super.visitFEquality(ctx);
+        LinkedList<Node> origin = this.nodes;
+        LinkedList<Node> left = visit(ctx.rp(0));
+        this.nodes = origin;
+        LinkedList<Node> right = visit(ctx.rp(1));
+        if (xml.isSame(left, right))
+            return this.nodes;
+        return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitFParentheses(xqueryParser.FParenthesesContext ctx) {
-        return super.visitFParentheses(ctx);
+        visit(ctx.f());
+        return this.nodes;
     }
 
     @Override
     public LinkedList<Node> visitFOr(xqueryParser.FOrContext ctx) {
-        return super.visitFOr(ctx);
+        if (visit(ctx.f(0)).isEmpty() && visit(ctx.f(1)).isEmpty())
+            return this.nodes;
+        return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitFValueEquality(xqueryParser.FValueEqualityContext ctx) {
-        return super.visitFValueEquality(ctx);
+        LinkedList<Node> origin = this.nodes;
+        LinkedList<Node> left = visit(ctx.rp(0));
+        this.nodes = origin;
+        LinkedList<Node> right = visit(ctx.rp(1));
+        if (xml.isEqual(left, right))
+            return this.nodes;
+        return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitFAnd(xqueryParser.FAndContext ctx) {
-        return super.visitFAnd(ctx);
+        if (visit(ctx.f(0)).isEmpty() || visit(ctx.f(1)).isEmpty())
+            return this.nodes;
+        return new LinkedList<>();
     }
 
     @Override
     public LinkedList<Node> visitApFileName(xqueryParser.ApFileNameContext ctx) {
-        return super.visitApFileName(ctx);
+        this.nodes = xml.getRoot(ctx.getText());
+        return this.nodes;
     }
 
     @Override
@@ -229,4 +415,5 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
     public LinkedList<Node> visitAttName(xqueryParser.AttNameContext ctx) {
         return super.visitAttName(ctx);
     }
+
 }
