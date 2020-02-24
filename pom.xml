@@ -45,7 +45,7 @@
                     <!--这部分可有可无,加上的话则直接生成可运行jar包-->
                     <archive>
                     <manifest>
-                    <mainClass>XPathProcessor</mainClass>
+                    <mainClass>XQueryProcessor</mainClass>
                     </manifest>
                     </archive>
                     <descriptorRefs>
