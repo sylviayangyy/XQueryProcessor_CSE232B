@@ -33,7 +33,7 @@ fileName
     : (Letter | Digit | '_' | '.')*         #apFileName
     ;
 
-StringConstant: '"' [_A-Za-z0-9.!, ]* '"';
+StringConstant: '"' [_A-Za-z0-9.!, ?:;]* '"';
 
 tagName
     : Letter (Letter | Digit | '-')*;
