@@ -8,7 +8,7 @@ import xpath.xpathParser;
 
 public class XPathProcessor {
     public static void main(String[] args) {
-//        String xpath = "doc(\"j_caesar.xml\")//ACT//SPEECH/../../*/../TITLE";
+//        String xpath = "doc(\"j_caesar.xml\")/ACT/SCENE/SPEECH/LINE/text()";
         String xpath = args[0];
         ANTLRInputStream input = new ANTLRInputStream(xpath);
         xpathLexer lexer = new xpathLexer(input);

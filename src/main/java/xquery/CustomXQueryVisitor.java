@@ -225,8 +225,7 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
     public LinkedList<Node> visitCondOr(xqueryParser.CondOrContext ctx) {
         if (visit(ctx.cond(0)).isEmpty() && visit(ctx.cond(1)).isEmpty())
             return new LinkedList<>();
-        return
-                this.nodes;
+        return this.nodes;
     }
 
     @Override
