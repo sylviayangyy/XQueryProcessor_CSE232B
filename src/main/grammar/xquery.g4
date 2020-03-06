@@ -12,6 +12,7 @@ xq
     | '<' tagName '>' '{' xq '}' '</' tagName '>'             # xqTag
     | forClause letClause? whereClause? returnClause    # xqFLWR
     | letClause xq                                      # xqLet
+    | 'join' '(' xq ',' xq ',' attributeList ',' attributeList ')'  #xqJoin
     ;
 
 forClause
@@ -39,6 +40,10 @@ cond
     | cond 'and' cond                                            # condAnd
     | cond 'or' cond                                             # condOr
     | 'not' cond                                                 # condNot
+    ;
+
+attributeList
+    : '[' (attName (',' attName)* )? ']'
     ;
 
 Var: '$' Letter (Letter | Digit | '-')*;

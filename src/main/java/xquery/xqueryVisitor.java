@@ -25,6 +25,13 @@ public interface xqueryVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitXqVar(xqueryParser.XqVarContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code xqJoin}
+	 * labeled alternative in {@link xqueryParser#xq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitXqJoin(xqueryParser.XqJoinContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code xqFLWR}
 	 * labeled alternative in {@link xqueryParser#xq}.
 	 * @param ctx the parse tree
@@ -160,6 +167,12 @@ public interface xqueryVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitCondNot(xqueryParser.CondNotContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link xqueryParser#attributeList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAttributeList(xqueryParser.AttributeListContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code apChildren}
 	 * labeled alternative in {@link xqueryParser#ap}.

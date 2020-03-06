@@ -39,6 +39,18 @@ public class xqueryBaseListener implements xqueryListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterXqJoin(xqueryParser.XqJoinContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitXqJoin(xqueryParser.XqJoinContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterXqFLWR(xqueryParser.XqFLWRContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -274,6 +286,18 @@ public class xqueryBaseListener implements xqueryListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitCondNot(xqueryParser.CondNotContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterAttributeList(xqueryParser.AttributeListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitAttributeList(xqueryParser.AttributeListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

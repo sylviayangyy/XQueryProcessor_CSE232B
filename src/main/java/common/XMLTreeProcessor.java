@@ -183,17 +183,21 @@ public class XMLTreeProcessor {
         return new LinkedList<>(nodeSet);
     }
 
-    public String keyForNode (Node node, List<Node> tags) {
-        String key = "";
-        NodeList nodes = node.getChildNodes();
-        for (Node tag : tags) {
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Node child = nodes.item(i);
-                if (child.getNodeName().equals(tag.getTextContent())) {
-                    key += IOHelper.nodesToString(getChildren(child));
+    public Node makeAttribute (String attr) {
+        return document.createAttribute(attr);
+    }
+
+    public String getKeyForNode (Node node, List<Node> attrs) {
+        StringBuilder keyBuilder = new StringBuilder();
+        NodeList children = node.getChildNodes();
+        for (Node attr : attrs) {
+            for (int i = 0; i < children.getLength(); i++) {
+                Node child = children.item(i);
+                if (child.getNodeName().equals(attr.getNodeName())) {
+                    keyBuilder.append(IOHelper.nodesToString(getChildren(child))) ;
                 }
             }
         }
-        return key;
+        return keyBuilder.toString();
     }
 }

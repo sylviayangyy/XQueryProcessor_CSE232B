@@ -1,12 +1,10 @@
 package xquery;
 
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.w3c.dom.Node;
 import common.XMLTreeProcessor;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
     LinkedList<Node> nodes = new LinkedList<>();
@@ -25,6 +23,57 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
             this.nodes = variables.get(var);
         } else
             this.nodes = new LinkedList<>();
+        return this.nodes;
+    }
+
+    @Override
+    public LinkedList<Node> visitXqJoin(xqueryParser.XqJoinContext ctx) {
+        LinkedList<Node> originalNodes = new LinkedList<>(this.nodes);
+        LinkedList<Node> firstNodes = new LinkedList<>(visit(ctx.xq(0)));
+        this.nodes = originalNodes;
+        LinkedList<Node> secondNodes = new LinkedList<>(visit(ctx.xq(1)));
+        List<xqueryParser.AttNameContext> firstAttributes = ctx.attributeList(0).attName();
+        List<xqueryParser.AttNameContext> secondAttributes = ctx.attributeList(1).attName();
+        if (firstAttributes.size()!=secondAttributes.size()) {
+            System.out.println("Two Join Parts Have Different Attribute Size");
+            return null;
+        }
+        List<Node> firstAttrNodes = new LinkedList<>();
+        for (xqueryParser.AttNameContext attrCtx : firstAttributes) {
+            firstAttrNodes.add(xml.makeAttribute(attrCtx.getText()));
+        }
+        List<Node> secondAttrNodes = new LinkedList<>();
+        for (xqueryParser.AttNameContext attrCtx : secondAttributes) {
+            secondAttrNodes.add(xml.makeAttribute(attrCtx.getText()));
+        }
+
+        HashMap<String, LinkedList<Node>> hashMap = new HashMap<>();
+        for (Node node : firstNodes) {
+            String key = xml.getKeyForNode(node, firstAttrNodes);
+            if (hashMap.containsKey(key)) {
+                hashMap.get(key).add(node);
+            } else {
+                LinkedList<Node> list = new LinkedList<>();
+                list.add(node);
+                hashMap.put(key, list);
+            }
+        }
+
+        LinkedList<Node> nodes = new LinkedList<>();
+        for (Node secondNode : secondNodes) {
+            String key = xml.getKeyForNode(secondNode, secondAttrNodes);
+            if (hashMap.containsKey(key)) {
+                for (Node firstNode : hashMap.get(key)) {
+                    LinkedList<Node> joinNodes = new LinkedList<>();
+                    joinNodes.addAll(xml.getChildren(firstNode));
+                    joinNodes.addAll(xml.getChildren(secondNode));
+                    Node newNode = xml.makeElem(firstNode.getNodeName(), joinNodes);
+                    nodes.add(newNode);
+                }
+            }
+        }
+
+        this.nodes = nodes;
         return this.nodes;
     }
 
