@@ -1,5 +1,6 @@
 package common;
 
+import IO.IOHelper;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 
@@ -11,10 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 public class XMLTreeProcessor {
     private Document document;
@@ -183,5 +181,19 @@ public class XMLTreeProcessor {
     public LinkedList<Node> unique(LinkedList<Node> nodes) {
         Set<Node> nodeSet = new HashSet<>(nodes);
         return new LinkedList<>(nodeSet);
+    }
+
+    public String keyForNode (Node node, List<Node> tags) {
+        String key = "";
+        NodeList nodes = node.getChildNodes();
+        for (Node tag : tags) {
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Node child = nodes.item(i);
+                if (child.getNodeName().equals(tag.getTextContent())) {
+                    key += IOHelper.nodesToString(getChildren(child));
+                }
+            }
+        }
+        return key;
     }
 }
