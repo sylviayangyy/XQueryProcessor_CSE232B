@@ -25,7 +25,7 @@ f
     | rp ('==' | 'is') rp                   # fEquality
     | '(' f ')'                             # fParentheses
     | f 'and' f                             # fAnd
-    | f 'or' f                              # fOr
+    | f ' or ' f                              # fOr
     | 'not' f                               # fNot
     ;
 
