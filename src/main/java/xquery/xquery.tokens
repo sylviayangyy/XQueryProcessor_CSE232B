@@ -53,7 +53,7 @@ WhiteSpace=43
 '</'=10
 'join'=11
 'for'=12
-'in'=13
+' in '=13
 'let'=14
 ':='=15
 'where'=16
@@ -66,7 +66,7 @@ WhiteSpace=43
 'some'=23
 'satisfies'=24
 'and'=25
-'or'=26
+' or '=26
 'not'=27
 '['=28
 ']'=29

@@ -1,6 +1,5 @@
 package xquery;
 
-import org.antlr.v4.runtime.tree.TerminalNode;
 import org.w3c.dom.Node;
 import common.XMLTreeProcessor;
 

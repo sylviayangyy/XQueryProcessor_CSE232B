@@ -1,4 +1,6 @@
-<!DOCTYPE PLAY SYSTEM "play.dtd">
+<?xml version="1.0"?>
+<!DOCTYPE PLAY SYSTEM "http://cseweb.ucsd.edu/classes/wi20/cse232B-a/j_caesar/play.dtd">
+
 <PLAY>
     <TITLE>The Tragedy of Julius Caesar</TITLE>
     <FM>
@@ -38,9 +40,9 @@
             <PERSONA>MARULLUS</PERSONA>
             <GRPDESCR>tribunes.</GRPDESCR>
         </PGROUP>
-        <PERSONA>ARTEMIDORUS Of Cnidos, a teacher of rhetoric.</PERSONA>
+        <PERSONA>ARTEMIDORUS Of Cnidos, a teacher of rhetoric. </PERSONA>
         <PERSONA>A Soothsayer</PERSONA>
-        <PERSONA>CINNA, a poet.</PERSONA>
+        <PERSONA>CINNA, a poet. </PERSONA>
         <PERSONA>Another Poet</PERSONA>
         <PGROUP>
             <PERSONA>LUCILIUS</PERSONA>
@@ -66,10 +68,8 @@
     </PERSONAE>
     <SCNDESCR>SCENE Rome: the neighbourhood of Sardis: the neighbourhood of Philippi.</SCNDESCR>
     <PLAYSUBT>JULIUS CAESAR</PLAYSUBT>
-    <ACT>
-        <TITLE>ACT I</TITLE>
-        <SCENE>
-            <TITLE>SCENE I. Rome. A street.</TITLE>
+    <ACT><TITLE>ACT I</TITLE>
+        <SCENE><TITLE>SCENE I. Rome. A street.</TITLE>
             <STAGEDIR>Enter FLAVIUS, MARULLUS, and certain Commoners</STAGEDIR>
             <SPEECH>
                 <SPEAKER>FLAVIUS</SPEAKER>
