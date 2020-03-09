@@ -1,16 +1,10 @@
 package xquery;
 
-import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.RuleNode;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.w3c.dom.Node;
-
 import java.util.*;
 
 public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
     private enum Step {
-        INITIAL, CHECK_FOR, CHECK_WHERE, OPTIMIZE, REWRITE
+        INITIAL, CHECK_FOR, CHECK_WHERE, CHECK_RETURN, OPTIMIZE, REWRITE_RETURN
     }
 
     private class Metadata {
@@ -23,6 +17,7 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
         Map<String, List<String>> varEqualConst = new HashMap<>();
         List<String> varsJoined = new LinkedList<>();
     }
+
     private Metadata metadata;
 
     public CustomXQueryOptimizer() {
@@ -41,7 +36,7 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
     // $b1 -> $tuple/b1/*
     public String visitXqVar(xqueryParser.XqVarContext ctx) {
         String var = ctx.Var().getText();
-        if (metadata.step == Step.REWRITE) {
+        if (metadata.step == Step.REWRITE_RETURN) {
             String name = var.substring(1);
             var = "$tuple/" + name + "/*";
         }
@@ -59,7 +54,134 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
 
     @Override
     public String visitXqFLWR(xqueryParser.XqFLWRContext ctx) {
-        return super.visitXqFLWR(ctx);
+        if (metadata.step != Step.INITIAL || !metadata.optimizable) {
+            return xqFLWRToString(ctx);
+        }
+
+        metadata.step = Step.CHECK_FOR;
+        visit(ctx.forClause());
+        if (!metadata.optimizable) {
+            return xqFLWRToString(ctx);
+        }
+
+        if (ctx.letClause() != null) {
+            return xqFLWRToString(ctx);
+        }
+
+        metadata.step = Step.CHECK_WHERE;
+        visit(ctx.whereClause());
+        if (!metadata.optimizable) {
+            return xqFLWRToString(ctx);
+        }
+
+        metadata.step = Step.CHECK_RETURN;
+        visit(ctx.returnClause());
+        if (!metadata.optimizable) {
+            return xqFLWRToString(ctx);
+        }
+
+        metadata.step = Step.OPTIMIZE;
+        visit(ctx.forClause());
+        int treeNum = metadata.rootsAndAllVariables.size();
+        if (treeNum <= 1) {
+            return xqFLWRToString(ctx);
+        }
+        visit(ctx.whereClause());
+
+        String first = getJoinSubQuery();
+        treeNum--;
+        while (treeNum >= 1) {
+            List<String> firstJoinAttributes = new LinkedList<>();
+            List<String> secondJoinAttributes = new LinkedList<>();
+            List<String> secondVars = metadata.rootsAndAllVariables.entrySet().iterator().next().getValue();
+            for (String firstVar : metadata.varsJoined) {
+                Set<String> firstVarEqualVar = metadata.varEqualVar.getOrDefault(firstVar, new HashSet<>());
+                if (firstVarEqualVar.size() == 0) {
+                    continue;
+                }
+                for (String secondVar : secondVars) {
+                    if (firstVarEqualVar.contains(secondVar)) {
+                        firstJoinAttributes.add(firstVar.substring(1));
+                        secondJoinAttributes.add(secondVar.substring(1));
+                        metadata.varEqualVar.get(firstVar).remove(secondVar);
+                        metadata.varEqualVar.get(secondVar).remove(firstVar);
+                    }
+                }
+            }
+            String second = getJoinSubQuery();
+            first = "join (" + first + "," + second + ", [" + String.join(",", firstJoinAttributes) + "], [" + String.join(",", secondJoinAttributes) + "])";
+            treeNum--;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("for $tuple in ");
+        sb.append(first);
+        metadata.step = Step.REWRITE_RETURN;
+        sb.append(visit(ctx.returnClause()));
+        return sb.toString();
+    }
+
+    private String getJoinSubQuery() {
+        String root = metadata.rootsAndAllVariables.keySet().iterator().next();
+        StringBuilder sb = new StringBuilder();
+        sb.append(" for ");
+        List<String> vars = metadata.rootsAndAllVariables.remove(root);
+        //for clause
+        List<String> varInPath = new LinkedList<>();
+        for (String var : vars) {
+            varInPath.add(var + " in " + metadata.varAndPath.get(var));
+        }
+        sb.append(String.join(",", varInPath));
+
+        //where clause
+        List<String> whereConds = new LinkedList<>();
+        //var eq const
+        for (String var : vars) {
+            List<String> constants = metadata.varEqualConst.getOrDefault(var, new LinkedList<>());
+            if (constants.size() != 0) {
+                for (String s : constants) {
+                    whereConds.add(var + " eq " + s);
+                }
+            }
+            metadata.varEqualConst.remove(var);
+        }
+        //var eq var, both vars are in the same tree
+        for (String left : vars) {
+            for (String right : vars) {
+                if (metadata.varEqualVar.getOrDefault(left, new HashSet<>()).contains(right)) {
+                    whereConds.add(left + " eq " + right);
+                    metadata.varEqualVar.get(left).remove(right);
+                    metadata.varEqualVar.get(right).remove(left);
+                }
+            }
+        }
+        if (whereConds.size() > 0) {
+            sb.append(" where ");
+            sb.append(String.join(" and ", whereConds));
+        }
+        //return clause
+        sb.append(" return ");
+        sb.append("<tuple>{");
+        List<String> returnVars = new LinkedList<>();
+        for (String var : vars) {
+            returnVars.add("<" + var.substring(1) + ">{" + var + "}</" + var.substring(1) + ">");
+        }
+        sb.append(String.join(",", returnVars));
+        sb.append("}</tuple>");
+        metadata.varsJoined.addAll(vars);
+        return sb.toString();
+    }
+
+    private String xqFLWRToString(xqueryParser.XqFLWRContext ctx) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(visit(ctx.forClause()));
+        if (ctx.letClause() != null) {
+            sb.append(visit(ctx.letClause()));
+        }
+        if (ctx.whereClause() != null) {
+            sb.append(visit(ctx.whereClause()));
+        }
+        sb.append(visit(ctx.returnClause()));
+        return sb.toString();
     }
 
     @Override
@@ -78,7 +200,7 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
     public String visitXqCollection(xqueryParser.XqCollectionContext ctx) {
         if (metadata.step == Step.CHECK_FOR || metadata.step == Step.CHECK_WHERE)
             metadata.optimizable = false;
-            return visit(ctx.xq(0)) + "," + visit(ctx.xq(1));
+        return visit(ctx.xq(0)) + "," + visit(ctx.xq(1));
     }
 
     @Override
@@ -117,15 +239,15 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
                 //add subquery(path) to var
                 metadata.varAndPath.put(varName, varPath);
                 // path -> 'doc(' || var
-                    // 1. start with var with parent
+                // 1. start with var
                 if (varPath.startsWith("$") && (!varPath.startsWith("$Undefined"))) {
                     String parent = varPath.split("/")[0];
                     metadata.varAndParent.put(varName, parent);
-                    // find the root of the dependency relationship
+                    // find the root of this tree
                     String root = parent;
                     while (metadata.varAndParent.get(root) != null)
                         root = metadata.varAndParent.get(root);
-                    // Add this var to the group of variables that depend on the root
+                    // Add this var to the tree depend on the root
                     metadata.rootsAndAllVariables.get(root).add(varName);
                 } else {
                     // 2. start with root
@@ -137,28 +259,43 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
             }
         }
 
-        String s = "";
-        s += " for ";
-        for (int i = 0; i < ctx.Var().size(); ++i) {
-            s += ctx.Var(i).getText() + " in " + visit(ctx.xq(i));
+        StringBuilder sb = new StringBuilder();
+        sb.append(" for ");
+//        String s = "";
+//        s += " for ";
+        if (ctx.Var().size() != ctx.xq().size()) {
+            System.err.println("The number of var and xq in for clause are not consistent.");
+        }
+        for (int i = 0; i < ctx.Var().size(); i++) {
+            sb.append(ctx.Var(i).getText());
+            sb.append(" in ");
+            sb.append(visit(ctx.xq(i)));
+//            s += ctx.Var(i).getText() + " in " + visit(ctx.xq(i));
             if (i != (ctx.Var().size() - 1)) {
-                s += ",";
+                sb.append(",");
+//                s += ",";
             }
         }
-        return s;
+        return sb.toString();
     }
 
     @Override
     public String visitLetClause(xqueryParser.LetClauseContext ctx) {
-        String s = "";
-        s += " let ";
+//        String s = "";
+        StringBuilder sb = new StringBuilder();
+        sb.append(" let ");
+//        s += " let ";
         for (int i = 0; i < ctx.Var().size(); ++i) {
-            s += ctx.Var(i).getText() + ":=" + visit(ctx.xq(i));
+//            sb.append(ctx.Var(i).getText() + ":=" + visit(ctx.xq(i))) ;
+            sb.append(ctx.Var(i).getText());
+            sb.append(":=");
+            sb.append(visit((ctx.xq(i))));
             if (i != (ctx.Var().size() - 1)) {
-                s += ",";
+//                s += ",";
+                sb.append(",");
             }
         }
-        return s;
+        return sb.toString();
     }
 
     @Override
@@ -185,16 +322,24 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
     @Override
     public String visitCondSome(xqueryParser.CondSomeContext ctx) {
         metadata.optimizable = false;
-        String s = "";
-        s += " some ";
+//        String s = "";
+        StringBuilder sb = new StringBuilder();
+        sb.append(" some ");
+//        s += " some ";
         for (int i = 0; i < ctx.Var().size(); ++i) {
-            s += ctx.Var(i).getText() + " in " + visit(ctx.xq(i));
+            sb.append(ctx.Var(i).getText());
+            sb.append(" in ");
+            sb.append(visit(ctx.xq(i)));
+//            s += ctx.Var(i).getText() + " in " + visit(ctx.xq(i));
             if (i != (ctx.Var().size() - 1)) {
-                s += ",";
+                sb.append(",");
+//                s += ",";
             }
         }
-        s += " satisfies " + visit(ctx.cond());
-        return s;
+        sb.append(" satisfies ");
+        sb.append(visit(ctx.cond()));
+//        s += " satisfies " + visit(ctx.cond());
+        return sb.toString();
     }
 
     @Override
@@ -246,16 +391,21 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
 
     @Override
     public String visitAttributeList(xqueryParser.AttributeListContext ctx) {
-        String s = "";
-        s += "[";
+//        String s = "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+//        s += "[";
         for (int i = 0; i < ctx.attName().size(); ++i) {
-            s += ctx.attName(i).getText();
+            sb.append(ctx.attName(i).getText());
+//            s += ctx.attName(i).getText();
             if (i != (ctx.attName().size() - 1)) {
-                s += ",";
+                sb.append(",");
+//                s += ",";
             }
         }
-        s += "]";
-        return s;
+        sb.append("]");
+//        s += "]";
+        return sb.toString();
     }
 
     @Override
@@ -361,75 +511,5 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
     @Override
     public String visitApFileName(xqueryParser.ApFileNameContext ctx) {
         return "doc(" + ctx.getText() + ")";
-    }
-
-    @Override
-    public String visitTagName(xqueryParser.TagNameContext ctx) {
-        return super.visitTagName(ctx);
-    }
-
-    @Override
-    public String visitAttName(xqueryParser.AttNameContext ctx) {
-        return super.visitAttName(ctx);
-    }
-
-    @Override
-    public String visit(ParseTree tree) {
-        return super.visit(tree);
-    }
-
-    @Override
-    public String visitChildren(RuleNode node) {
-        return super.visitChildren(node);
-    }
-
-    @Override
-    public String visitTerminal(TerminalNode node) {
-        return super.visitTerminal(node);
-    }
-
-    @Override
-    public String visitErrorNode(ErrorNode node) {
-        return super.visitErrorNode(node);
-    }
-
-    @Override
-    protected String defaultResult() {
-        return super.defaultResult();
-    }
-
-    @Override
-    protected String aggregateResult(String aggregate, String nextResult) {
-        return super.aggregateResult(aggregate, nextResult);
-    }
-
-    @Override
-    protected boolean shouldVisitNextChild(RuleNode node, String currentResult) {
-        return super.shouldVisitNextChild(node, currentResult);
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return super.equals(obj);
-    }
-
-    @Override
-    protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
-
-    @Override
-    public String toString() {
-        return super.toString();
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
     }
 }
