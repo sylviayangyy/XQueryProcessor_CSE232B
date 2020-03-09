@@ -8,7 +8,7 @@ import org.w3c.dom.Node;
 
 import java.util.*;
 
-public class CustomXQueryOptimizer extends xqueryBaseVisitor<LinkedList<Node>> {
+public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
     private enum Step {
         INITIAL, CHECK_FOR, CHECK_WHERE, OPTIMIZE, REWRITE
     }
@@ -23,278 +23,388 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<LinkedList<Node>> {
         Map<String, List<String>> varEqualConst = new HashMap<>();
         List<String> varsJoined = new LinkedList<>();
     }
+    private Metadata metadata;
 
     public CustomXQueryOptimizer() {
-        Metadata metadata = new Metadata();
+        metadata = new Metadata();
     }
 
     @Override
-    public LinkedList<Node> visitXqAp(xqueryParser.XqApContext ctx) {
-        return super.visitXqAp(ctx);
+    public String visitXqAp(xqueryParser.XqApContext ctx) {
+        if (metadata.step == Step.CHECK_WHERE) {
+            metadata.optimizable = false;
+        }
+        return visit(ctx.ap());
     }
 
     @Override
-    public LinkedList<Node> visitXqVar(xqueryParser.XqVarContext ctx) {
-        return super.visitXqVar(ctx);
+    // $b1 -> $tuple/b1/*
+    public String visitXqVar(xqueryParser.XqVarContext ctx) {
+        String var = ctx.Var().getText();
+        if (metadata.step == Step.REWRITE) {
+            String name = var.substring(1);
+            var = "$tuple/" + name + "/*";
+        }
+        return var;
     }
 
     @Override
-    public LinkedList<Node> visitXqJoin(xqueryParser.XqJoinContext ctx) {
-        return super.visitXqJoin(ctx);
+    public String visitXqJoin(xqueryParser.XqJoinContext ctx) {
+        metadata.optimizable = false;
+        return " join("
+                + visit(ctx.xq(0)) + "," + visit(ctx.xq(1)) + ","
+                + visit(ctx.attributeList(0)) + "," + visit(ctx.attributeList(1))
+                + ")";
     }
 
     @Override
-    public LinkedList<Node> visitXqFLWR(xqueryParser.XqFLWRContext ctx) {
+    public String visitXqFLWR(xqueryParser.XqFLWRContext ctx) {
         return super.visitXqFLWR(ctx);
     }
 
     @Override
-    public LinkedList<Node> visitXqAll(xqueryParser.XqAllContext ctx) {
-        return super.visitXqAll(ctx);
+    public String visitXqAll(xqueryParser.XqAllContext ctx) {
+        if (metadata.step == Step.CHECK_WHERE)
+            metadata.optimizable = false;
+        return visit(ctx.xq()) + "//" + visit(ctx.rp());
     }
 
     @Override
-    public LinkedList<Node> visitXqParentheses(xqueryParser.XqParenthesesContext ctx) {
-        return super.visitXqParentheses(ctx);
+    public String visitXqParentheses(xqueryParser.XqParenthesesContext ctx) {
+        return "(" + visit(ctx.xq()) + ")";
     }
 
     @Override
-    public LinkedList<Node> visitXqCollection(xqueryParser.XqCollectionContext ctx) {
-        return super.visitXqCollection(ctx);
+    public String visitXqCollection(xqueryParser.XqCollectionContext ctx) {
+        if (metadata.step == Step.CHECK_FOR || metadata.step == Step.CHECK_WHERE)
+            metadata.optimizable = false;
+            return visit(ctx.xq(0)) + "," + visit(ctx.xq(1));
     }
 
     @Override
-    public LinkedList<Node> visitXqStringConstant(xqueryParser.XqStringConstantContext ctx) {
-        return super.visitXqStringConstant(ctx);
+    public String visitXqStringConstant(xqueryParser.XqStringConstantContext ctx) {
+        if (metadata.step == Step.CHECK_FOR)
+            metadata.optimizable = false;
+        return ctx.StringConstant().getText();
     }
 
     @Override
-    public LinkedList<Node> visitXqLet(xqueryParser.XqLetContext ctx) {
-        return super.visitXqLet(ctx);
+    public String visitXqLet(xqueryParser.XqLetContext ctx) {
+        metadata.optimizable = false;
+        return visit(ctx.letClause()) + " " + visit(ctx.xq());
     }
 
     @Override
-    public LinkedList<Node> visitXqTag(xqueryParser.XqTagContext ctx) {
-        return super.visitXqTag(ctx);
+    public String visitXqTag(xqueryParser.XqTagContext ctx) {
+        if (metadata.step == Step.CHECK_FOR || metadata.step == Step.CHECK_WHERE)
+            metadata.optimizable = false;
+        return "<" + ctx.tagName(0).getText() + ">{" + visit(ctx.xq()) + "}</" + ctx.tagName(1).getText() + ">";
     }
 
     @Override
-    public LinkedList<Node> visitXqChildren(xqueryParser.XqChildrenContext ctx) {
-        return super.visitXqChildren(ctx);
+    public String visitXqChildren(xqueryParser.XqChildrenContext ctx) {
+        if (metadata.step == Step.CHECK_WHERE)
+            metadata.optimizable = false;
+        return visit(ctx.xq()) + "/" + visit(ctx.rp());
     }
 
     @Override
-    public LinkedList<Node> visitForClause(xqueryParser.ForClauseContext ctx) {
-        return super.visitForClause(ctx);
+    public String visitForClause(xqueryParser.ForClauseContext ctx) {
+        if (metadata.step == Step.OPTIMIZE) {
+            for (int i = 0; i < ctx.Var().size(); i++) {
+                String varName = ctx.Var(i).getText();
+                String varPath = visit(ctx.xq(i));
+                //add subquery(path) to var
+                metadata.varAndPath.put(varName, varPath);
+                // path -> 'doc(' || var
+                    // 1. start with var with parent
+                if (varPath.startsWith("$") && (!varPath.startsWith("$Undefined"))) {
+                    String parent = varPath.split("/")[0];
+                    metadata.varAndParent.put(varName, parent);
+                    // find the root of the dependency relationship
+                    String root = parent;
+                    while (metadata.varAndParent.get(root) != null)
+                        root = metadata.varAndParent.get(root);
+                    // Add this var to the group of variables that depend on the root
+                    metadata.rootsAndAllVariables.get(root).add(varName);
+                } else {
+                    // 2. start with root
+                    metadata.varAndParent.put(varName, null);
+                    LinkedList<String> vars = new LinkedList<>();
+                    vars.add(varName);
+                    metadata.rootsAndAllVariables.put(varName, vars);
+                }
+            }
+        }
+
+        String s = "";
+        s += " for ";
+        for (int i = 0; i < ctx.Var().size(); ++i) {
+            s += ctx.Var(i).getText() + " in " + visit(ctx.xq(i));
+            if (i != (ctx.Var().size() - 1)) {
+                s += ",";
+            }
+        }
+        return s;
     }
 
     @Override
-    public LinkedList<Node> visitLetClause(xqueryParser.LetClauseContext ctx) {
-        return super.visitLetClause(ctx);
+    public String visitLetClause(xqueryParser.LetClauseContext ctx) {
+        String s = "";
+        s += " let ";
+        for (int i = 0; i < ctx.Var().size(); ++i) {
+            s += ctx.Var(i).getText() + ":=" + visit(ctx.xq(i));
+            if (i != (ctx.Var().size() - 1)) {
+                s += ",";
+            }
+        }
+        return s;
     }
 
     @Override
-    public LinkedList<Node> visitWhereClause(xqueryParser.WhereClauseContext ctx) {
-        return super.visitWhereClause(ctx);
+    public String visitWhereClause(xqueryParser.WhereClauseContext ctx) {
+        return " where " + visit(ctx.cond());
     }
 
     @Override
-    public LinkedList<Node> visitReturnClause(xqueryParser.ReturnClauseContext ctx) {
-        return super.visitReturnClause(ctx);
+    public String visitReturnClause(xqueryParser.ReturnClauseContext ctx) {
+        return " return " + visit(ctx.xq());
     }
 
     @Override
-    public LinkedList<Node> visitCondEmpty(xqueryParser.CondEmptyContext ctx) {
-        return super.visitCondEmpty(ctx);
+    public String visitCondEmpty(xqueryParser.CondEmptyContext ctx) {
+        metadata.optimizable = false;
+        return " empty(" + visit(ctx.xq()) + ")";
     }
 
     @Override
-    public LinkedList<Node> visitCondParentheses(xqueryParser.CondParenthesesContext ctx) {
-        return super.visitCondParentheses(ctx);
+    public String visitCondParentheses(xqueryParser.CondParenthesesContext ctx) {
+        return "(" + visit(ctx.cond()) + ")";
     }
 
     @Override
-    public LinkedList<Node> visitCondSome(xqueryParser.CondSomeContext ctx) {
-        return super.visitCondSome(ctx);
+    public String visitCondSome(xqueryParser.CondSomeContext ctx) {
+        metadata.optimizable = false;
+        String s = "";
+        s += " some ";
+        for (int i = 0; i < ctx.Var().size(); ++i) {
+            s += ctx.Var(i).getText() + " in " + visit(ctx.xq(i));
+            if (i != (ctx.Var().size() - 1)) {
+                s += ",";
+            }
+        }
+        s += " satisfies " + visit(ctx.cond());
+        return s;
     }
 
     @Override
-    public LinkedList<Node> visitCondEquality(xqueryParser.CondEqualityContext ctx) {
-        return super.visitCondEquality(ctx);
+    public String visitCondEquality(xqueryParser.CondEqualityContext ctx) {
+        metadata.optimizable = false;
+        return visit(ctx.xq(0)) + "==" + visit(ctx.xq(1));
     }
 
     @Override
-    public LinkedList<Node> visitCondValueEquality(xqueryParser.CondValueEqualityContext ctx) {
-        return super.visitCondValueEquality(ctx);
+    // (Var|Constant) ’eq’ (Var|Constant)
+    public String visitCondValueEquality(xqueryParser.CondValueEqualityContext ctx) {
+        if (metadata.step == Step.OPTIMIZE) {
+            String left = visit(ctx.xq(0));
+            String right = visit(ctx.xq(1));
+            boolean leftIsVar = left.startsWith("$");
+            boolean rightIsVar = right.startsWith("$");
+            if (leftIsVar && rightIsVar) {
+                metadata.varEqualVar.putIfAbsent(left, new HashSet<>());
+                metadata.varEqualVar.get(left).add(right);
+                metadata.varEqualVar.putIfAbsent(right, new HashSet<>());
+                metadata.varEqualVar.get(right).add(left);
+            } else if (leftIsVar) {
+                metadata.varEqualConst.putIfAbsent(left, new LinkedList<>());
+                metadata.varEqualConst.get(left).add(right);
+            } else if (rightIsVar) {
+                metadata.varEqualConst.putIfAbsent(right, new LinkedList<>());
+                metadata.varEqualConst.get(right).add(left);
+            }
+        }
+        return visit(ctx.xq(0)) + "=" + visit(ctx.xq(1));
     }
 
     @Override
-    public LinkedList<Node> visitCondAnd(xqueryParser.CondAndContext ctx) {
-        return super.visitCondAnd(ctx);
+    public String visitCondAnd(xqueryParser.CondAndContext ctx) {
+        return visit(ctx.cond(0)) + " and " + visit(ctx.cond(1));
     }
 
     @Override
-    public LinkedList<Node> visitCondOr(xqueryParser.CondOrContext ctx) {
-        return super.visitCondOr(ctx);
+    public String visitCondOr(xqueryParser.CondOrContext ctx) {
+        metadata.optimizable = false;
+        return visit(ctx.cond(0)) + " or " + visit(ctx.cond(1));
     }
 
     @Override
-    public LinkedList<Node> visitCondNot(xqueryParser.CondNotContext ctx) {
-        return super.visitCondNot(ctx);
+    public String visitCondNot(xqueryParser.CondNotContext ctx) {
+        metadata.optimizable = false;
+        return " not " + visit(ctx.cond());
     }
 
     @Override
-    public LinkedList<Node> visitAttributeList(xqueryParser.AttributeListContext ctx) {
-        return super.visitAttributeList(ctx);
+    public String visitAttributeList(xqueryParser.AttributeListContext ctx) {
+        String s = "";
+        s += "[";
+        for (int i = 0; i < ctx.attName().size(); ++i) {
+            s += ctx.attName(i).getText();
+            if (i != (ctx.attName().size() - 1)) {
+                s += ",";
+            }
+        }
+        s += "]";
+        return s;
     }
 
     @Override
-    public LinkedList<Node> visitApChildren(xqueryParser.ApChildrenContext ctx) {
-        return super.visitApChildren(ctx);
+    public String visitApChildren(xqueryParser.ApChildrenContext ctx) {
+        return visit(ctx.fileName()) + "/" + visit(ctx.rp());
     }
 
     @Override
-    public LinkedList<Node> visitApAll(xqueryParser.ApAllContext ctx) {
-        return super.visitApAll(ctx);
+    public String visitApAll(xqueryParser.ApAllContext ctx) {
+        return visit(ctx.fileName()) + "//" + visit(ctx.rp());
     }
 
     @Override
-    public LinkedList<Node> visitRpText(xqueryParser.RpTextContext ctx) {
-        return super.visitRpText(ctx);
+    public String visitRpText(xqueryParser.RpTextContext ctx) {
+        return "text()";
     }
 
     @Override
-    public LinkedList<Node> visitRpAny(xqueryParser.RpAnyContext ctx) {
-        return super.visitRpAny(ctx);
+    public String visitRpAny(xqueryParser.RpAnyContext ctx) {
+        return "*";
     }
 
     @Override
-    public LinkedList<Node> visitRpChildren(xqueryParser.RpChildrenContext ctx) {
-        return super.visitRpChildren(ctx);
+    public String visitRpChildren(xqueryParser.RpChildrenContext ctx) {
+        return visit(ctx.rp(0)) + "/" + visit(ctx.rp(1));
     }
 
     @Override
-    public LinkedList<Node> visitRpTag(xqueryParser.RpTagContext ctx) {
-        return super.visitRpTag(ctx);
+    public String visitRpTag(xqueryParser.RpTagContext ctx) {
+        return ctx.tagName().getText();
     }
 
     @Override
-    public LinkedList<Node> visitRpParent(xqueryParser.RpParentContext ctx) {
-        return super.visitRpParent(ctx);
+    public String visitRpParent(xqueryParser.RpParentContext ctx) {
+        return "..";
     }
 
     @Override
-    public LinkedList<Node> visitRpParentheses(xqueryParser.RpParenthesesContext ctx) {
-        return super.visitRpParentheses(ctx);
+    public String visitRpParentheses(xqueryParser.RpParenthesesContext ctx) {
+        return "(" + visit(ctx.rp()) + ")";
     }
 
     @Override
-    public LinkedList<Node> visitRpAll(xqueryParser.RpAllContext ctx) {
-        return super.visitRpAll(ctx);
+    public String visitRpAll(xqueryParser.RpAllContext ctx) {
+        return visit(ctx.rp(0)) + "//" + visit(ctx.rp(1));
     }
 
     @Override
-    public LinkedList<Node> visitRpCurrent(xqueryParser.RpCurrentContext ctx) {
-        return super.visitRpCurrent(ctx);
+    public String visitRpCurrent(xqueryParser.RpCurrentContext ctx) {
+        return ".";
     }
 
     @Override
-    public LinkedList<Node> visitRpFilter(xqueryParser.RpFilterContext ctx) {
-        return super.visitRpFilter(ctx);
+    public String visitRpFilter(xqueryParser.RpFilterContext ctx) {
+        return visit(ctx.rp()) + "[" + visit(ctx.f()) + "]";
     }
 
     @Override
-    public LinkedList<Node> visitRpAttribute(xqueryParser.RpAttributeContext ctx) {
-        return super.visitRpAttribute(ctx);
+    public String visitRpAttribute(xqueryParser.RpAttributeContext ctx) {
+        return "@" + ctx.attName().getText();
     }
 
     @Override
-    public LinkedList<Node> visitRpCollection(xqueryParser.RpCollectionContext ctx) {
-        return super.visitRpCollection(ctx);
+    public String visitRpCollection(xqueryParser.RpCollectionContext ctx) {
+        return visit(ctx.rp(0)) + "," + visit(ctx.rp(1));
     }
 
     @Override
-    public LinkedList<Node> visitFNot(xqueryParser.FNotContext ctx) {
-        return super.visitFNot(ctx);
+    public String visitFNot(xqueryParser.FNotContext ctx) {
+        return " not " + visit(ctx.f());
     }
 
     @Override
-    public LinkedList<Node> visitFRp(xqueryParser.FRpContext ctx) {
-        return super.visitFRp(ctx);
+    public String visitFRp(xqueryParser.FRpContext ctx) {
+        return visit(ctx.rp());
     }
 
     @Override
-    public LinkedList<Node> visitFEquality(xqueryParser.FEqualityContext ctx) {
-        return super.visitFEquality(ctx);
+    public String visitFEquality(xqueryParser.FEqualityContext ctx) {
+        return visit(ctx.rp(0)) + "==" + visit(ctx.rp(1));
     }
 
     @Override
-    public LinkedList<Node> visitFParentheses(xqueryParser.FParenthesesContext ctx) {
-        return super.visitFParentheses(ctx);
+    public String visitFParentheses(xqueryParser.FParenthesesContext ctx) {
+        return "(" + visit(ctx.f()) + ")";
     }
 
     @Override
-    public LinkedList<Node> visitFOr(xqueryParser.FOrContext ctx) {
-        return super.visitFOr(ctx);
+    public String visitFOr(xqueryParser.FOrContext ctx) {
+        return visit(ctx.f(0)) + " or " + visit(ctx.f(1));
     }
 
     @Override
-    public LinkedList<Node> visitFValueEquality(xqueryParser.FValueEqualityContext ctx) {
-        return super.visitFValueEquality(ctx);
+    public String visitFValueEquality(xqueryParser.FValueEqualityContext ctx) {
+        return visit(ctx.rp(0)) + "=" + visit(ctx.rp(1));
     }
 
     @Override
-    public LinkedList<Node> visitFAnd(xqueryParser.FAndContext ctx) {
-        return super.visitFAnd(ctx);
+    public String visitFAnd(xqueryParser.FAndContext ctx) {
+        return visit(ctx.f(0)) + " and " + visit(ctx.f(1));
     }
 
     @Override
-    public LinkedList<Node> visitApFileName(xqueryParser.ApFileNameContext ctx) {
-        return super.visitApFileName(ctx);
+    public String visitApFileName(xqueryParser.ApFileNameContext ctx) {
+        return "doc(" + ctx.getText() + ")";
     }
 
     @Override
-    public LinkedList<Node> visitTagName(xqueryParser.TagNameContext ctx) {
+    public String visitTagName(xqueryParser.TagNameContext ctx) {
         return super.visitTagName(ctx);
     }
 
     @Override
-    public LinkedList<Node> visitAttName(xqueryParser.AttNameContext ctx) {
+    public String visitAttName(xqueryParser.AttNameContext ctx) {
         return super.visitAttName(ctx);
     }
 
     @Override
-    public LinkedList<Node> visit(ParseTree tree) {
+    public String visit(ParseTree tree) {
         return super.visit(tree);
     }
 
     @Override
-    public LinkedList<Node> visitChildren(RuleNode node) {
+    public String visitChildren(RuleNode node) {
         return super.visitChildren(node);
     }
 
     @Override
-    public LinkedList<Node> visitTerminal(TerminalNode node) {
+    public String visitTerminal(TerminalNode node) {
         return super.visitTerminal(node);
     }
 
     @Override
-    public LinkedList<Node> visitErrorNode(ErrorNode node) {
+    public String visitErrorNode(ErrorNode node) {
         return super.visitErrorNode(node);
     }
 
     @Override
-    protected LinkedList<Node> defaultResult() {
+    protected String defaultResult() {
         return super.defaultResult();
     }
 
     @Override
-    protected LinkedList<Node> aggregateResult(LinkedList<Node> aggregate, LinkedList<Node> nextResult) {
+    protected String aggregateResult(String aggregate, String nextResult) {
         return super.aggregateResult(aggregate, nextResult);
     }
 
     @Override
-    protected boolean shouldVisitNextChild(RuleNode node, LinkedList<Node> currentResult) {
+    protected boolean shouldVisitNextChild(RuleNode node, String currentResult) {
         return super.shouldVisitNextChild(node, currentResult);
     }
 
