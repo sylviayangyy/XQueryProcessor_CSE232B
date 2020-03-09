@@ -510,6 +510,6 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
 
     @Override
     public String visitApFileName(xqueryParser.ApFileNameContext ctx) {
-        return "doc(" + ctx.getText() + ")";
+        return "doc(\"" + ctx.getText() + "\")";
     }
 }
