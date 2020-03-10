@@ -109,12 +109,13 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
                 }
             }
             String second = getJoinSubQuery();
-            first = "join (" + first + "," + second + ", [" + String.join(",", firstJoinAttributes) + "], [" + String.join(",", secondJoinAttributes) + "])";
+            first = "join ( \n" + first + ",\n\n" + second + ",\n\n [" + String.join(",", firstJoinAttributes) + "], [" + String.join(",", secondJoinAttributes) + "])";
             treeNum--;
         }
         StringBuilder sb = new StringBuilder();
         sb.append("for $tuple in ");
         sb.append(first);
+        sb.append("\n\n");
         metadata.step = Step.REWRITE_RETURN;
         sb.append(visit(ctx.returnClause()));
         return sb.toString();
@@ -130,7 +131,8 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
         for (String var : vars) {
             varInPath.add(var + " in " + metadata.varAndPath.get(var));
         }
-        sb.append(String.join(",", varInPath));
+        sb.append(String.join(",\n", varInPath));
+        sb.append("\n");
 
         //where clause
         List<String> whereConds = new LinkedList<>();
@@ -157,7 +159,9 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
         if (whereConds.size() > 0) {
             sb.append(" where ");
             sb.append(String.join(" and ", whereConds));
+            sb.append("\n");
         }
+
         //return clause
         sb.append(" return ");
         sb.append("<tuple>{");
