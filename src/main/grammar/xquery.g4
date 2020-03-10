@@ -16,19 +16,19 @@ xq
     ;
 
 forClause
-    : 'for' Var ' in ' xq (',' Var ' in ' xq)*
+    : 'for ' Var ' in ' xq (',' Var ' in ' xq)*
     ;
 
 letClause
-    : 'let' Var ':=' xq (',' Var ':=' xq)*
+    : 'let ' Var ':=' xq (',' Var ':=' xq)*
     ;
 
 whereClause
-    : 'where' cond
+    : 'where ' cond
     ;
 
 returnClause
-    : 'return' xq
+    : 'return ' xq
     ;
 
 cond

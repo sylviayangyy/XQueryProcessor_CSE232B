@@ -35,7 +35,7 @@ public class xqueryParser extends Parser {
 	private static String[] makeLiteralNames() {
 		return new String[] {
 			null, "'('", "')'", "','", "'/'", "'//'", "'<'", "'>'", "'{'", "'}'", 
-			"'</'", "'join'", "'for'", "' in '", "'let'", "':='", "'where'", "'return'", 
+			"'</'", "'join'", "'for '", "' in '", "'let '", "':='", "'where '", "'return '", 
 			"'='", "'eq'", "'=='", "'is'", "'empty'", "'some'", "'satisfies'", "'and'", 
 			"' or '", "'not'", "'['", "']'", "'doc(\"'", "'\")'", "'*'", "'.'", "'..'", 
 			"'text()'", "'@'", "'_'", "'-'"

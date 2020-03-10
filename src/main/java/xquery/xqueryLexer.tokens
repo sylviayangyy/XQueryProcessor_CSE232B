@@ -52,12 +52,12 @@ WhiteSpace=43
 '}'=9
 '</'=10
 'join'=11
-'for'=12
+'for '=12
 ' in '=13
-'let'=14
+'let '=14
 ':='=15
-'where'=16
-'return'=17
+'where '=16
+'return '=17
 '='=18
 'eq'=19
 '=='=20
