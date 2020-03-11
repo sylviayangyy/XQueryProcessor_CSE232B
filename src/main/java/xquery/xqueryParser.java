@@ -34,7 +34,7 @@ public class xqueryParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "'('", "')'", "','", "'/'", "'//'", "'<'", "'>'", "'{'", "'}'", 
+			null, "'('", "')'", "'/'", "'//'", "','", "'<'", "'>'", "'{'", "'}'", 
 			"'</'", "'join'", "'for '", "' in '", "'let '", "':='", "'where '", "'return '", 
 			"'='", "'eq'", "'=='", "'is'", "'empty'", "'some'", "'satisfies'", "'and'", 
 			"' or '", "'not'", "'['", "']'", "'doc(\"'", "'\")'", "'*'", "'.'", "'..'", 
@@ -493,15 +493,15 @@ public class xqueryParser extends Parser {
 				setState(58);
 				xq(0);
 				setState(59);
-				match(T__2);
+				match(T__4);
 				setState(60);
 				xq(0);
 				setState(61);
-				match(T__2);
+				match(T__4);
 				setState(62);
 				attributeList();
 				setState(63);
-				match(T__2);
+				match(T__4);
 				setState(64);
 				attributeList();
 				setState(65);
@@ -528,11 +528,11 @@ public class xqueryParser extends Parser {
 						_localctx = new XqCollectionContext(new XqContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_xq);
 						setState(69);
-						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
+						if (!(precpred(_ctx, 5))) throw new FailedPredicateException(this, "precpred(_ctx, 5)");
 						setState(70);
-						match(T__2);
+						match(T__4);
 						setState(71);
-						xq(8);
+						xq(6);
 						}
 						break;
 					case 2:
@@ -540,9 +540,9 @@ public class xqueryParser extends Parser {
 						_localctx = new XqChildrenContext(new XqContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_xq);
 						setState(72);
-						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
+						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
 						setState(73);
-						match(T__3);
+						match(T__2);
 						setState(74);
 						rp(0);
 						}
@@ -552,9 +552,9 @@ public class xqueryParser extends Parser {
 						_localctx = new XqAllContext(new XqContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_xq);
 						setState(75);
-						if (!(precpred(_ctx, 5))) throw new FailedPredicateException(this, "precpred(_ctx, 5)");
+						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
 						setState(76);
-						match(T__4);
+						match(T__3);
 						setState(77);
 						rp(0);
 						}
@@ -627,11 +627,11 @@ public class xqueryParser extends Parser {
 			setState(93);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==T__2) {
+			while (_la==T__4) {
 				{
 				{
 				setState(87);
-				match(T__2);
+				match(T__4);
 				setState(88);
 				match(Var);
 				setState(89);
@@ -705,11 +705,11 @@ public class xqueryParser extends Parser {
 			setState(106);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			while (_la==T__2) {
+			while (_la==T__4) {
 				{
 				{
 				setState(100);
-				match(T__2);
+				match(T__4);
 				setState(101);
 				match(Var);
 				setState(102);
@@ -1106,11 +1106,11 @@ public class xqueryParser extends Parser {
 				setState(139);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				while (_la==T__2) {
+				while (_la==T__4) {
 					{
 					{
 					setState(133);
-					match(T__2);
+					match(T__4);
 					setState(134);
 					match(Var);
 					setState(135);
@@ -1255,11 +1255,11 @@ public class xqueryParser extends Parser {
 				setState(170);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				while (_la==T__2) {
+				while (_la==T__4) {
 					{
 					{
 					setState(166);
-					match(T__2);
+					match(T__4);
 					setState(167);
 					attName();
 					}
@@ -1360,7 +1360,7 @@ public class xqueryParser extends Parser {
 				setState(179);
 				match(T__30);
 				setState(180);
-				match(T__3);
+				match(T__2);
 				setState(181);
 				rp(0);
 				}
@@ -1376,7 +1376,7 @@ public class xqueryParser extends Parser {
 				setState(185);
 				match(T__30);
 				setState(186);
-				match(T__4);
+				match(T__3);
 				setState(187);
 				rp(0);
 				}
@@ -1725,7 +1725,7 @@ public class xqueryParser extends Parser {
 						setState(205);
 						if (!(precpred(_ctx, 4))) throw new FailedPredicateException(this, "precpred(_ctx, 4)");
 						setState(206);
-						match(T__3);
+						match(T__2);
 						setState(207);
 						rp(5);
 						}
@@ -1737,7 +1737,7 @@ public class xqueryParser extends Parser {
 						setState(208);
 						if (!(precpred(_ctx, 3))) throw new FailedPredicateException(this, "precpred(_ctx, 3)");
 						setState(209);
-						match(T__4);
+						match(T__3);
 						setState(210);
 						rp(4);
 						}
@@ -1749,7 +1749,7 @@ public class xqueryParser extends Parser {
 						setState(211);
 						if (!(precpred(_ctx, 1))) throw new FailedPredicateException(this, "precpred(_ctx, 1)");
 						setState(212);
-						match(T__2);
+						match(T__4);
 						setState(213);
 						rp(2);
 						}
@@ -2342,11 +2342,11 @@ public class xqueryParser extends Parser {
 	private boolean xq_sempred(XqContext _localctx, int predIndex) {
 		switch (predIndex) {
 		case 0:
-			return precpred(_ctx, 7);
-		case 1:
-			return precpred(_ctx, 6);
-		case 2:
 			return precpred(_ctx, 5);
+		case 1:
+			return precpred(_ctx, 7);
+		case 2:
+			return precpred(_ctx, 6);
 		}
 		return true;
 	}
@@ -2412,21 +2412,21 @@ public class xqueryParser extends Parser {
 		",\5\30\r\2,-\7\t\2\2-F\3\2\2\2.\60\5\4\3\2/\61\5\6\4\2\60/\3\2\2\2\60"+
 		"\61\3\2\2\2\61\63\3\2\2\2\62\64\5\b\5\2\63\62\3\2\2\2\63\64\3\2\2\2\64"+
 		"\65\3\2\2\2\65\66\5\n\6\2\66F\3\2\2\2\678\5\6\4\289\5\2\2\49F\3\2\2\2"+
-		":;\7\r\2\2;<\7\3\2\2<=\5\2\2\2=>\7\5\2\2>?\5\2\2\2?@\7\5\2\2@A\5\16\b"+
-		"\2AB\7\5\2\2BC\5\16\b\2CD\7\4\2\2DF\3\2\2\2E\34\3\2\2\2E\36\3\2\2\2E\37"+
+		":;\7\r\2\2;<\7\3\2\2<=\5\2\2\2=>\7\7\2\2>?\5\2\2\2?@\7\7\2\2@A\5\16\b"+
+		"\2AB\7\7\2\2BC\5\16\b\2CD\7\4\2\2DF\3\2\2\2E\34\3\2\2\2E\36\3\2\2\2E\37"+
 		"\3\2\2\2E \3\2\2\2E$\3\2\2\2E.\3\2\2\2E\67\3\2\2\2E:\3\2\2\2FR\3\2\2\2"+
-		"GH\f\t\2\2HI\7\5\2\2IQ\5\2\2\nJK\f\b\2\2KL\7\6\2\2LQ\5\22\n\2MN\f\7\2"+
-		"\2NO\7\7\2\2OQ\5\22\n\2PG\3\2\2\2PJ\3\2\2\2PM\3\2\2\2QT\3\2\2\2RP\3\2"+
+		"GH\f\7\2\2HI\7\7\2\2IQ\5\2\2\bJK\f\t\2\2KL\7\5\2\2LQ\5\22\n\2MN\f\b\2"+
+		"\2NO\7\6\2\2OQ\5\22\n\2PG\3\2\2\2PJ\3\2\2\2PM\3\2\2\2QT\3\2\2\2RP\3\2"+
 		"\2\2RS\3\2\2\2S\3\3\2\2\2TR\3\2\2\2UV\7\16\2\2VW\7)\2\2WX\7\17\2\2X_\5"+
-		"\2\2\2YZ\7\5\2\2Z[\7)\2\2[\\\7\17\2\2\\^\5\2\2\2]Y\3\2\2\2^a\3\2\2\2_"+
+		"\2\2\2YZ\7\7\2\2Z[\7)\2\2[\\\7\17\2\2\\^\5\2\2\2]Y\3\2\2\2^a\3\2\2\2_"+
 		"]\3\2\2\2_`\3\2\2\2`\5\3\2\2\2a_\3\2\2\2bc\7\20\2\2cd\7)\2\2de\7\21\2"+
-		"\2el\5\2\2\2fg\7\5\2\2gh\7)\2\2hi\7\21\2\2ik\5\2\2\2jf\3\2\2\2kn\3\2\2"+
+		"\2el\5\2\2\2fg\7\7\2\2gh\7)\2\2hi\7\21\2\2ik\5\2\2\2jf\3\2\2\2kn\3\2\2"+
 		"\2lj\3\2\2\2lm\3\2\2\2m\7\3\2\2\2nl\3\2\2\2op\7\22\2\2pq\5\f\7\2q\t\3"+
 		"\2\2\2rs\7\23\2\2st\5\2\2\2t\13\3\2\2\2uv\b\7\1\2vw\5\2\2\2wx\t\2\2\2"+
 		"xy\5\2\2\2y\u009a\3\2\2\2z{\5\2\2\2{|\t\3\2\2|}\5\2\2\2}\u009a\3\2\2\2"+
 		"~\177\7\30\2\2\177\u0080\7\3\2\2\u0080\u0081\5\2\2\2\u0081\u0082\7\4\2"+
 		"\2\u0082\u009a\3\2\2\2\u0083\u0084\7\31\2\2\u0084\u0085\7)\2\2\u0085\u0086"+
-		"\7\17\2\2\u0086\u008d\5\2\2\2\u0087\u0088\7\5\2\2\u0088\u0089\7)\2\2\u0089"+
+		"\7\17\2\2\u0086\u008d\5\2\2\2\u0087\u0088\7\7\2\2\u0088\u0089\7)\2\2\u0089"+
 		"\u008a\7\17\2\2\u008a\u008c\5\2\2\2\u008b\u0087\3\2\2\2\u008c\u008f\3"+
 		"\2\2\2\u008d\u008b\3\2\2\2\u008d\u008e\3\2\2\2\u008e\u0090\3\2\2\2\u008f"+
 		"\u008d\3\2\2\2\u0090\u0091\7\32\2\2\u0091\u0092\5\f\7\7\u0092\u009a\3"+
@@ -2438,22 +2438,22 @@ public class xqueryParser extends Parser {
 		"\u00a0\u00a2\5\f\7\5\u00a1\u009b\3\2\2\2\u00a1\u009e\3\2\2\2\u00a2\u00a5"+
 		"\3\2\2\2\u00a3\u00a1\3\2\2\2\u00a3\u00a4\3\2\2\2\u00a4\r\3\2\2\2\u00a5"+
 		"\u00a3\3\2\2\2\u00a6\u00af\7\36\2\2\u00a7\u00ac\5\32\16\2\u00a8\u00a9"+
-		"\7\5\2\2\u00a9\u00ab\5\32\16\2\u00aa\u00a8\3\2\2\2\u00ab\u00ae\3\2\2\2"+
+		"\7\7\2\2\u00a9\u00ab\5\32\16\2\u00aa\u00a8\3\2\2\2\u00ab\u00ae\3\2\2\2"+
 		"\u00ac\u00aa\3\2\2\2\u00ac\u00ad\3\2\2\2\u00ad\u00b0\3\2\2\2\u00ae\u00ac"+
 		"\3\2\2\2\u00af\u00a7\3\2\2\2\u00af\u00b0\3\2\2\2\u00b0\u00b1\3\2\2\2\u00b1"+
 		"\u00b2\7\37\2\2\u00b2\17\3\2\2\2\u00b3\u00b4\7 \2\2\u00b4\u00b5\5\26\f"+
-		"\2\u00b5\u00b6\7!\2\2\u00b6\u00b7\7\6\2\2\u00b7\u00b8\5\22\n\2\u00b8\u00c0"+
+		"\2\u00b5\u00b6\7!\2\2\u00b6\u00b7\7\5\2\2\u00b7\u00b8\5\22\n\2\u00b8\u00c0"+
 		"\3\2\2\2\u00b9\u00ba\7 \2\2\u00ba\u00bb\5\26\f\2\u00bb\u00bc\7!\2\2\u00bc"+
-		"\u00bd\7\7\2\2\u00bd\u00be\5\22\n\2\u00be\u00c0\3\2\2\2\u00bf\u00b3\3"+
+		"\u00bd\7\6\2\2\u00bd\u00be\5\22\n\2\u00be\u00c0\3\2\2\2\u00bf\u00b3\3"+
 		"\2\2\2\u00bf\u00b9\3\2\2\2\u00c0\21\3\2\2\2\u00c1\u00c2\b\n\1\2\u00c2"+
 		"\u00ce\5\30\r\2\u00c3\u00ce\7\"\2\2\u00c4\u00ce\7#\2\2\u00c5\u00ce\7$"+
 		"\2\2\u00c6\u00ce\7%\2\2\u00c7\u00c8\7&\2\2\u00c8\u00ce\5\32\16\2\u00c9"+
 		"\u00ca\7\3\2\2\u00ca\u00cb\5\22\n\2\u00cb\u00cc\7\4\2\2\u00cc\u00ce\3"+
 		"\2\2\2\u00cd\u00c1\3\2\2\2\u00cd\u00c3\3\2\2\2\u00cd\u00c4\3\2\2\2\u00cd"+
 		"\u00c5\3\2\2\2\u00cd\u00c6\3\2\2\2\u00cd\u00c7\3\2\2\2\u00cd\u00c9\3\2"+
-		"\2\2\u00ce\u00df\3\2\2\2\u00cf\u00d0\f\6\2\2\u00d0\u00d1\7\6\2\2\u00d1"+
-		"\u00de\5\22\n\7\u00d2\u00d3\f\5\2\2\u00d3\u00d4\7\7\2\2\u00d4\u00de\5"+
-		"\22\n\6\u00d5\u00d6\f\3\2\2\u00d6\u00d7\7\5\2\2\u00d7\u00de\5\22\n\4\u00d8"+
+		"\2\2\u00ce\u00df\3\2\2\2\u00cf\u00d0\f\6\2\2\u00d0\u00d1\7\5\2\2\u00d1"+
+		"\u00de\5\22\n\7\u00d2\u00d3\f\5\2\2\u00d3\u00d4\7\6\2\2\u00d4\u00de\5"+
+		"\22\n\6\u00d5\u00d6\f\3\2\2\u00d6\u00d7\7\7\2\2\u00d7\u00de\5\22\n\4\u00d8"+
 		"\u00d9\f\4\2\2\u00d9\u00da\7\36\2\2\u00da\u00db\5\24\13\2\u00db\u00dc"+
 		"\7\37\2\2\u00dc\u00de\3\2\2\2\u00dd\u00cf\3\2\2\2\u00dd\u00d2\3\2\2\2"+
 		"\u00dd\u00d5\3\2\2\2\u00dd\u00d8\3\2\2\2\u00de\u00e1\3\2\2\2\u00df\u00dd"+

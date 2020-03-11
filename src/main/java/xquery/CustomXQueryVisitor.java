@@ -203,6 +203,7 @@ public class CustomXQueryVisitor extends xqueryBaseVisitor<LinkedList<Node>> {
 
     @Override
     public LinkedList<Node> visitReturnClause(xqueryParser.ReturnClauseContext ctx) {
+
         return visit(ctx.xq());
     }
 

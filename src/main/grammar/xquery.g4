@@ -6,9 +6,9 @@ xq
     | StringConstant                                    # xqStringConstant
     | ap                                                # xqAp
     | '(' xq ')'                                        # xqParentheses
-    | xq ',' xq                                         # xqCollection
     | xq '/' rp                                         # xqChildren
     | xq '//' rp                                        # xqAll
+    | xq ',' xq                                         # xqCollection
     | '<' tagName '>' '{' xq '}' '</' tagName '>'             # xqTag
     | forClause letClause? whereClause? returnClause    # xqFLWR
     | letClause xq                                      # xqLet
