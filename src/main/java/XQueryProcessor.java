@@ -7,6 +7,8 @@ import xquery.CustomXQueryVisitor;
 import xquery.xqueryLexer;
 import xquery.xqueryParser;
 
+import java.io.FileInputStream;
+
 public class XQueryProcessor {
     public static void main(String[] args) {
         try {
