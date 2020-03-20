@@ -3,11 +3,8 @@ package xquery;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
 import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class xqueryParser extends Parser {
@@ -38,7 +35,7 @@ public class xqueryParser extends Parser {
 	private static String[] makeLiteralNames() {
 		return new String[] {
 			null, "'('", "')'", "'/'", "'//'", "','", "'<'", "'>'", "'{'", "'}'", 
-			"'</'", "'join'", "'for'", "'in'", "'let'", "':='", "'where'", "'return'", 
+			"'</'", "'join'", "'for'", "'in'", "'let '", "':='", "'where'", "'return'", 
 			"'='", "'eq'", "'=='", "'is'", "'empty'", "'some'", "'satisfies'", "'and'", 
 			"' or '", "'not'", "'['", "']'", "'doc(\"'", "'\")'", "'*'", "'.'", "'..'", 
 			"'text()'", "'@'", "'_'", "'-'"

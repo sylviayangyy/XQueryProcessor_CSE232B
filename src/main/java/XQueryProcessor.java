@@ -4,8 +4,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import xquery.*;
 
-import java.io.FileInputStream;
-
 public class XQueryProcessor {
     public static void main(String[] args) {
         try {
@@ -45,7 +43,7 @@ public class XQueryProcessor {
                     "      $a1 eq $a2 and $a2 eq $a3 and\n" +
                     "      $a3 eq $a6 and $a3 eq $a5 and $a3 eq $a4\n" +
                     "      \n" +
-                    "return <triple> {$b1, $b2, $b3, $b4, $b5, $b6} </triple>";
+                    "return <triplet> {$b1, $b2, $b3, $b4, $b5, $b6} </triplet>";
             ANTLRInputStream input = new ANTLRInputStream(query);
             xqueryLexer lexer = new xqueryLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);

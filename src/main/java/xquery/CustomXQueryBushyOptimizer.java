@@ -120,7 +120,7 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         //how many cartesian products we must have
         metadata.productNum = countComponents(metadata.rootsAndAllVariables.keySet().size(), metadata.edges) - 1;
         while (metadata.treeNodes.size()>1) {
-//            System.out.println(metadata.treeNodes.size());
+            System.out.println(metadata.treeNodes.size());
             List<TreeNode> treeNodes = metadata.treeNodes;
             String minJoin = "";
             int minHeight = Integer.MAX_VALUE;
@@ -146,7 +146,6 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
                             }
                         }
                         if (inConnectedTree || metadata.productNum>0) {
-                            //TODO JOIN
                             minHeight = height;
                             minJoin = joinTwoTreeNode(treeNode1, treeNode2);
                             joinedTreeNode1 = treeNode1;
@@ -170,8 +169,6 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
             treeNodes.add(newTreeNode);
             metadata.treeNodes = treeNodes;
         }
-
-        //TODO
 
 //        String first = getJoinSubQuery();
 //        treeNum--;
@@ -229,7 +226,7 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
                 }
             }
         }
-        sb.append("[ ");
+        sb.append("[");
         sb.append(String.join(",", firstJoinAttributes));
         sb.append("], [");
         sb.append(String.join(",", secondJoinAttributes));

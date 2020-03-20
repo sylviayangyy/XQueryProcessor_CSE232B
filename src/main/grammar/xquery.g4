@@ -20,7 +20,7 @@ forClause
     ;
 
 letClause
-    : 'let' Var ':=' xq (',' Var ':=' xq)*
+    : 'let ' Var ':=' xq (',' Var ':=' xq)*
     ;
 
 whereClause
