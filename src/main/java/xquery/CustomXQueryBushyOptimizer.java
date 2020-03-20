@@ -2,25 +2,53 @@ package xquery;
 
 import java.util.*;
 
-public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
+public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
     private enum Step {
         INITIAL, CHECK_FOR, CHECK_WHERE, CHECK_RETURN, OPTIMIZE, REWRITE_RETURN
     }
 
     private class Metadata {
         boolean optimizable = true;
+        int productNum = 0;
         Step step = Step.INITIAL;
         Map<String, String> varAndParent = new HashMap<>();
+        Map<String, String> varAndRoot = new HashMap<>();
         Map<String, LinkedList<String>> rootsAndAllVariables = new HashMap<>();
         Map<String, String> varAndPath = new HashMap<>();
         Map<String, Set<String>> varEqualVar = new HashMap<>();
         Map<String, List<String>> varEqualConst = new HashMap<>();
         List<String> varsJoined = new LinkedList<>();
+        // use to describe graph
+        List<String[]> edges = new LinkedList<>();
+        List<TreeNode> treeNodes = new LinkedList<>();
+        Map<String, List<String>> connectedTrees = new HashMap<>();
+    }
+
+    private class TreeNode {
+        int height = 0;
+        //cartesian products may result in more than one roots
+        List<String> roots;
+        String content;
+        List<String> vars = new LinkedList<>();
+
+        TreeNode(List<String> roots, String content, List<String> vars) {
+            this.roots = roots;
+            this.content = content;
+            this.vars = vars;
+        }
+
+        TreeNode(int height, List<String> roots, String content, List<String> vars) {
+            this.height = height;
+            this.roots = roots;
+            this.content = content;
+            this.vars = vars;
+        }
     }
 
     private Metadata metadata;
 
-    public CustomXQueryOptimizer() {
+
+    public CustomXQueryBushyOptimizer() {
         metadata = new Metadata();
     }
 
@@ -88,92 +116,264 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
         }
         visit(ctx.whereClause());
 
-        String first = getJoinSubQuery();
-        treeNum--;
-        while (treeNum >= 1) {
-            List<String> firstJoinAttributes = new LinkedList<>();
-            List<String> secondJoinAttributes = new LinkedList<>();
-            List<String> secondVars = metadata.rootsAndAllVariables.entrySet().iterator().next().getValue();
-            for (String firstVar : metadata.varsJoined) {
-                Set<String> firstVarEqualVar = metadata.varEqualVar.getOrDefault(firstVar, new HashSet<>());
-                if (firstVarEqualVar.size() == 0) {
-                    continue;
-                }
-                for (String secondVar : secondVars) {
-                    if (firstVarEqualVar.contains(secondVar)) {
-                        firstJoinAttributes.add(firstVar.substring(1));
-                        secondJoinAttributes.add(secondVar.substring(1));
-                        metadata.varEqualVar.get(firstVar).remove(secondVar);
-                        metadata.varEqualVar.get(secondVar).remove(firstVar);
+        metadata.treeNodes = getTreeNodes();
+        //how many cartesian products we must have
+        metadata.productNum = countComponents(metadata.rootsAndAllVariables.keySet().size(), metadata.edges) - 1;
+        while (metadata.treeNodes.size()>1) {
+            List<TreeNode> treeNodes = metadata.treeNodes;
+            String minJoin = "";
+            int minHeight = Integer.MAX_VALUE;
+            TreeNode joinedTreeNode1 = treeNodes.get(0);
+            TreeNode joinedTreeNode2 = treeNodes.get(0);
+            TreeNode newTreeNode = treeNodes.get(0);
+            for (int i=0; i<treeNodes.size(); i++) {
+                for (int j=i+1; j<treeNodes.size(); j++) {
+                    TreeNode treeNode1 = treeNodes.get(i);
+                    TreeNode treeNode2 = treeNodes.get(j);
+                    int height = Math.max(treeNode1.height, treeNode2.height) + 1;
+                    if (height < minHeight) {
+                        boolean inConnectedTree = false;
+                        for (String root1 : treeNode1.roots) {
+                            for (String root2 : treeNode2.roots) {
+                                if (metadata.connectedTrees.get(root1).contains(root2)) {
+                                    inConnectedTree = true;
+                                    break;
+                                }
+                            }
+                            if (inConnectedTree) {
+                                break;
+                            }
+                        }
+                        if (inConnectedTree || metadata.productNum>0) {
+                            //TODO JOIN
+                            minHeight = height;
+                            minJoin = joinTwoTreeNode(treeNode1, treeNode2);
+                            joinedTreeNode1 = treeNode1;
+                            joinedTreeNode2 = treeNode2;
+                            List<String> vars1 = treeNode1.vars;
+                            List<String> vars2 = treeNode2.vars;
+                            vars1.addAll(vars2);
+                            newTreeNode = new TreeNode(height, treeNode1.roots, minJoin, vars1);
+                            if (!inConnectedTree) {
+                                metadata.productNum--;
+                            }
+                        }
                     }
                 }
             }
-            String second = getJoinSubQuery();
-            first = "join ( \n" + first + ",\n\n" + second + ",\n\n [" + String.join(",", firstJoinAttributes) + "], [" + String.join(",", secondJoinAttributes) + "])";
-            treeNum--;
+            treeNodes.remove(joinedTreeNode1);
+            treeNodes.remove(joinedTreeNode2);
+            treeNodes.add(newTreeNode);
         }
+
+        //TODO
+
+//        String first = getJoinSubQuery();
+//        treeNum--;
+//        while (treeNum >= 1) {
+//            List<String> firstJoinAttributes = new LinkedList<>();
+//            List<String> secondJoinAttributes = new LinkedList<>();
+//            List<String> secondVars = metadata.rootsAndAllVariables.entrySet().iterator().next().getValue();
+//            for (String firstVar : metadata.varsJoined) {
+//                Set<String> firstVarEqualVar = metadata.varEqualVar.getOrDefault(firstVar, new HashSet<>());
+//                if (firstVarEqualVar.size() == 0) {
+//                    continue;
+//                }
+//                for (String secondVar : secondVars) {
+//                    if (firstVarEqualVar.contains(secondVar)) {
+//                        firstJoinAttributes.add(firstVar.substring(1));
+//                        secondJoinAttributes.add(secondVar.substring(1));
+//                        metadata.varEqualVar.get(firstVar).remove(secondVar);
+//                        metadata.varEqualVar.get(secondVar).remove(firstVar);
+//                    }
+//                }
+//            }
+//            String second = getJoinSubQuery();
+//            first = "join ( \n" + first + ",\n\n" + second + ",\n\n [" + String.join(",", firstJoinAttributes) + "], [" + String.join(",", secondJoinAttributes) + "])";
+//            treeNum--;
+//        }
         StringBuilder sb = new StringBuilder();
         sb.append("for $tuple in ");
-        sb.append(first);
+        sb.append(metadata.treeNodes.get(0));
         sb.append("\n\n");
         metadata.step = Step.REWRITE_RETURN;
         sb.append(visit(ctx.returnClause()));
         return sb.toString();
     }
 
-    private String getJoinSubQuery() {
-        String root = metadata.rootsAndAllVariables.keySet().iterator().next();
+    private String joinTwoTreeNode(TreeNode treeNode1, TreeNode treeNode2) {
         StringBuilder sb = new StringBuilder();
-        sb.append(" for ");
-        List<String> vars = metadata.rootsAndAllVariables.remove(root);
-        //for clause
-        List<String> varInPath = new LinkedList<>();
-        for (String var : vars) {
-            varInPath.add(var + " in " + metadata.varAndPath.get(var));
-        }
-        sb.append(String.join(",\n", varInPath));
-        sb.append("\n");
-
-        //where clause
-        List<String> whereConds = new LinkedList<>();
-        //var eq const
-        for (String var : vars) {
-            List<String> constants = metadata.varEqualConst.getOrDefault(var, new LinkedList<>());
-            if (constants.size() != 0) {
-                for (String s : constants) {
-                    whereConds.add(var + " eq " + s);
-                }
+        sb.append("join ( ");
+        sb.append(treeNode1.content);
+        sb.append(",\n\n");
+        sb.append(treeNode2.content);
+        sb.append(",\n\n");
+        List<String> firstJoinAttributes = new LinkedList<>();
+        List<String> secondJoinAttributes = new LinkedList<>();
+        for (String firstVar : treeNode1.vars) {
+            Set<String> firstVarEqualVar = metadata.varEqualVar.getOrDefault(firstVar, new HashSet<>());
+            if (firstVarEqualVar.size() == 0) {
+                continue;
             }
-            metadata.varEqualConst.remove(var);
-        }
-        //var eq var, both vars are in the same tree
-        for (String left : vars) {
-            for (String right : vars) {
-                if (metadata.varEqualVar.getOrDefault(left, new HashSet<>()).contains(right)) {
-                    whereConds.add(left + " eq " + right);
-                    metadata.varEqualVar.get(left).remove(right);
-                    metadata.varEqualVar.get(right).remove(left);
+            for (String secondVar : treeNode2.vars) {
+                if (firstVarEqualVar.contains(secondVar)) {
+                    firstJoinAttributes.add(firstVar.substring(1));
+                    secondJoinAttributes.add(secondVar.substring(1));
+                    metadata.varEqualVar.get(firstVar).remove(secondVar);
+                    metadata.varEqualVar.get(secondVar).remove(firstVar);
                 }
             }
         }
-        if (whereConds.size() > 0) {
-            sb.append(" where ");
-            sb.append(String.join(" and ", whereConds));
-            sb.append("\n");
-        }
-
-        //return clause
-        sb.append(" return ");
-        sb.append("<tuple>{");
-        List<String> returnVars = new LinkedList<>();
-        for (String var : vars) {
-            returnVars.add("<" + var.substring(1) + ">{" + var + "}</" + var.substring(1) + ">");
-        }
-        sb.append(String.join(",", returnVars));
-        sb.append("}</tuple>");
-        metadata.varsJoined.addAll(vars);
+        sb.append("[ ");
+        sb.append(String.join(",", firstJoinAttributes));
+        sb.append("], [");
+        sb.append(String.join(",", secondJoinAttributes));
+        sb.append("] )");
         return sb.toString();
     }
+
+    private List<TreeNode> getTreeNodes() {
+        List<TreeNode> treeNodes = new LinkedList<>();
+        for (String root : metadata.rootsAndAllVariables.keySet()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(" for ");
+            List<String> vars = metadata.rootsAndAllVariables.get(root);
+            List<String> varsPath = new LinkedList<>();
+            for (String var : vars) {
+                varsPath.add(var + " in " + metadata.varAndPath.get(var));
+            }
+            sb.append(String.join(",\n", varsPath));
+            sb.append("\n");
+
+            List<String> whereConds = new LinkedList<>();
+            //var eq const
+            for (String var : vars) {
+                List<String> constants = metadata.varEqualConst.getOrDefault(var, new LinkedList<>());
+                if (constants.size() != 0) {
+                    for (String s : constants) {
+                        whereConds.add(var + " eq " + s);
+                    }
+                }
+                metadata.varEqualConst.remove(var);
+            }
+            //var eq var, both vars are in the same tree
+            for (String left : vars) {
+                for (String right : vars) {
+                    if (metadata.varAndRoot.get(left).equals(metadata.varAndRoot.get(right))) {
+                        whereConds.add(left + " eq " + right);
+                        metadata.varEqualVar.get(left).remove(right);
+                        metadata.varEqualVar.get(right).remove(left);
+                    }
+                }
+            }
+            if (whereConds.size() > 0) {
+                sb.append(" where ");
+                sb.append(String.join(" and ", whereConds));
+                sb.append("\n");
+            }
+
+            sb.append(" return ");
+            sb.append("<tuple>{");
+            List<String> returnVars = new LinkedList<>();
+            for (String var : vars) {
+                returnVars.add("<" + var.substring(1) + ">{" + var + "}</" + var.substring(1) + ">");
+            }
+            sb.append(String.join(",", returnVars));
+            sb.append("}</tuple>");
+//            metadata.varsJoined.addAll(vars);
+//            return sb.toString();
+            List<String> roots = new LinkedList<>();
+            roots.add(root);
+            TreeNode treeNode = new TreeNode(roots, sb.toString(), vars);
+            treeNodes.add(treeNode);
+        }
+        return treeNodes;
+    }
+
+    private int countComponents(int n, List<String[]> edges) {
+        if (n <= 1)
+            return n;
+        Set<String> roots = metadata.rootsAndAllVariables.keySet();
+        Map<String, List<String>> map = new HashMap<>();
+        for (String root : roots) {
+            map.put(root, new ArrayList<>());
+        }
+        for (String[] edge : edges) {
+            map.get(edge[0]).add(edge[1]);
+            map.get(edge[1]).add(edge[0]);
+        }
+        metadata.connectedTrees = map;
+        Set<String> visited = new HashSet<>();
+        int count = 0;
+        for (String root : roots) {
+            if (visited.add(root)) {
+                dfsVisit(root, map, visited);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void dfsVisit(String root, Map<String, List<String>> map, Set<String> visited) {
+        for (String otherRoot : map.get(root)) {
+            if (visited.add(otherRoot))
+                dfsVisit(otherRoot, map, visited);
+        }
+    }
+
+//    private String getJoinSubQuery() {
+//        String root = metadata.rootsAndAllVariables.keySet().iterator().next();
+//        StringBuilder sb = new StringBuilder();
+//        sb.append(" for ");
+//        List<String> vars = metadata.rootsAndAllVariables.remove(root);
+//        //for clause
+//        List<String> varInPath = new LinkedList<>();
+//        for (String var : vars) {
+//            varInPath.add(var + " in " + metadata.varAndPath.get(var));
+//        }
+//        sb.append(String.join(",\n", varInPath));
+//        sb.append("\n");
+//
+//        //where clause
+//        List<String> whereConds = new LinkedList<>();
+//        //var eq const
+//        for (String var : vars) {
+//            List<String> constants = metadata.varEqualConst.getOrDefault(var, new LinkedList<>());
+//            if (constants.size() != 0) {
+//                for (String s : constants) {
+//                    whereConds.add(var + " eq " + s);
+//                }
+//            }
+//            metadata.varEqualConst.remove(var);
+//        }
+//        //var eq var, both vars are in the same tree
+//        for (String left : vars) {
+//            for (String right : vars) {
+//                if (metadata.varEqualVar.getOrDefault(left, new HashSet<>()).contains(right)) {
+//                    whereConds.add(left + " eq " + right);
+//                    metadata.varEqualVar.get(left).remove(right);
+//                    metadata.varEqualVar.get(right).remove(left);
+//                }
+//            }
+//        }
+//        if (whereConds.size() > 0) {
+//            sb.append(" where ");
+//            sb.append(String.join(" and ", whereConds));
+//            sb.append("\n");
+//        }
+//
+//        //return clause
+//        sb.append(" return ");
+//        sb.append("<tuple>{");
+//        List<String> returnVars = new LinkedList<>();
+//        for (String var : vars) {
+//            returnVars.add("<" + var.substring(1) + ">{" + var + "}</" + var.substring(1) + ">");
+//        }
+//        sb.append(String.join(",", returnVars));
+//        sb.append("}</tuple>");
+//        metadata.varsJoined.addAll(vars);
+//        return sb.toString();
+//    }
 
     private String xqFLWRToString(xqueryParser.XqFLWRContext ctx) {
         StringBuilder sb = new StringBuilder();
@@ -253,12 +453,14 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
                         root = metadata.varAndParent.get(root);
                     // Add this var to the tree depend on the root
                     metadata.rootsAndAllVariables.get(root).add(varName);
+                    metadata.varAndRoot.put(varName, root);
                 } else {
                     // 2. start with root
                     metadata.varAndParent.put(varName, null);
                     LinkedList<String> vars = new LinkedList<>();
                     vars.add(varName);
                     metadata.rootsAndAllVariables.put(varName, vars);
+                    metadata.varAndRoot.put(varName, varName);
                 }
             }
         }
@@ -365,6 +567,12 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
                 metadata.varEqualVar.get(left).add(right);
                 metadata.varEqualVar.putIfAbsent(right, new HashSet<>());
                 metadata.varEqualVar.get(right).add(left);
+                String[] edge = new String[2];
+                edge[0] = metadata.varAndRoot.get(left);
+                edge[1] = metadata.varAndRoot.get(right);
+                if (!edge[0].equals(edge[1])) {
+                    metadata.edges.add(edge);
+                }
             } else if (leftIsVar) {
                 metadata.varEqualConst.putIfAbsent(left, new LinkedList<>());
                 metadata.varEqualConst.get(left).add(right);
@@ -395,20 +603,15 @@ public class CustomXQueryOptimizer extends xqueryBaseVisitor<String> {
 
     @Override
     public String visitAttributeList(xqueryParser.AttributeListContext ctx) {
-//        String s = "";
         StringBuilder sb = new StringBuilder();
         sb.append("[");
-//        s += "[";
         for (int i = 0; i < ctx.attName().size(); ++i) {
             sb.append(ctx.attName(i).getText());
-//            s += ctx.attName(i).getText();
             if (i != (ctx.attName().size() - 1)) {
                 sb.append(",");
-//                s += ",";
             }
         }
         sb.append("]");
-//        s += "]";
         return sb.toString();
     }
 

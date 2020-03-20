@@ -2,7 +2,7 @@ import IO.IOHelper;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import xquery.CustomXQueryOptimizer;
+import xquery.CustomXQueryLeftDeepOptimizer;
 import xquery.CustomXQueryVisitor;
 import xquery.xqueryLexer;
 import xquery.xqueryParser;
@@ -19,7 +19,7 @@ public class XQueryProcessor {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             xqueryParser parser = new xqueryParser(tokens);
             ParseTree tree = parser.xq();
-            CustomXQueryOptimizer xQueryOptimizer = new CustomXQueryOptimizer();
+            CustomXQueryLeftDeepOptimizer xQueryOptimizer = new CustomXQueryLeftDeepOptimizer();
             String optimizedQuery = xQueryOptimizer.visit(tree);
             System.out.println("OptimizedQuery: ");
             System.out.println(optimizedQuery);
