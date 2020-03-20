@@ -120,6 +120,7 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         //how many cartesian products we must have
         metadata.productNum = countComponents(metadata.rootsAndAllVariables.keySet().size(), metadata.edges) - 1;
         while (metadata.treeNodes.size()>1) {
+//            System.out.println(metadata.treeNodes.size());
             List<TreeNode> treeNodes = metadata.treeNodes;
             String minJoin = "";
             int minHeight = Integer.MAX_VALUE;
@@ -150,10 +151,13 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
                             minJoin = joinTwoTreeNode(treeNode1, treeNode2);
                             joinedTreeNode1 = treeNode1;
                             joinedTreeNode2 = treeNode2;
-                            List<String> vars1 = treeNode1.vars;
-                            List<String> vars2 = treeNode2.vars;
-                            vars1.addAll(vars2);
-                            newTreeNode = new TreeNode(height, treeNode1.roots, minJoin, vars1);
+                            List<String> roots = new LinkedList<>();
+                            roots.addAll(joinedTreeNode1.roots);
+                            roots.addAll(joinedTreeNode2.roots);
+                            List<String> vars = new LinkedList<>();
+                            vars.addAll(joinedTreeNode1.vars);
+                            vars.addAll(joinedTreeNode2.vars);
+                            newTreeNode = new TreeNode(height, roots, minJoin, vars);
                             if (!inConnectedTree) {
                                 metadata.productNum--;
                             }
@@ -164,6 +168,7 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
             treeNodes.remove(joinedTreeNode1);
             treeNodes.remove(joinedTreeNode2);
             treeNodes.add(newTreeNode);
+            metadata.treeNodes = treeNodes;
         }
 
         //TODO
@@ -194,7 +199,7 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
 //        }
         StringBuilder sb = new StringBuilder();
         sb.append("for $tuple in ");
-        sb.append(metadata.treeNodes.get(0));
+        sb.append(metadata.treeNodes.get(0).content);
         sb.append("\n\n");
         metadata.step = Step.REWRITE_RETURN;
         sb.append(visit(ctx.returnClause()));
@@ -259,7 +264,7 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
             //var eq var, both vars are in the same tree
             for (String left : vars) {
                 for (String right : vars) {
-                    if (metadata.varAndRoot.get(left).equals(metadata.varAndRoot.get(right))) {
+                    if (metadata.varEqualVar.getOrDefault(left, new HashSet<>()).contains(right)) {
                         whereConds.add(left + " eq " + right);
                         metadata.varEqualVar.get(left).remove(right);
                         metadata.varEqualVar.get(right).remove(left);
