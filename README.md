@@ -1,4 +1,4 @@
-#UCSD CSE232 Project
+# UCSD CSE232 Project
 ## For milestone4:
 
 ### The *XQueryOptimized.jar* and *input.txt* are under the root directory of CSE232BWI20 repo.
