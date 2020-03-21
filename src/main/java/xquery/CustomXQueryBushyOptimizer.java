@@ -26,7 +26,7 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         List<TreeNode> treeNodes = new LinkedList<>();
         Map<String, List<String>> connectedTrees = new HashMap<>();
         //dp table, map: subset and its optimal join tree along with cartesian product num
-        Map<List<TreeNode>, TreeNode> dp = new HashMap<>();
+        Map<Set<TreeNode>, TreeNode> dp = new HashMap<>();
     }
 
     private class TreeNode {
@@ -130,15 +130,18 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         //for each Ri ∈ R
         //DP[{Ri}] = Ri
         for (TreeNode root : metadata.treeNodes) {
-            List<TreeNode> subset = new LinkedList<>();
+            Set<TreeNode> subset = new HashSet<>();
             subset.add(root);
             metadata.dp.put(subset, root);
         }
 
-        List<List<TreeNode>> subsets = getSubsets();
+        List<Set<TreeNode>> subsets = getSubsets();
         for (int s = 2; s <= metadata.treeNodes.size(); s++) {
-            for (List<TreeNode> s1 : subsets) {
-                for (List<TreeNode> s2 : subsets) {
+            for (Set<TreeNode> s1 : subsets) {
+                for (Set<TreeNode> s2 : subsets) {
+//                    if (s==3) {
+//                        System.out.println();
+//                    }
                     if (s1.size() + s2.size() == s) {
                         if (intersect(s1, s2)) {
                             continue;
@@ -156,10 +159,9 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
                             Set<TreeNode> union = new HashSet<>();
                             union.addAll(s1);
                             union.addAll(s2);
-                            List<TreeNode> unionList = new LinkedList<>(union);
-                            TreeNode previousNode = metadata.dp.get(unionList);
+                            TreeNode previousNode = metadata.dp.get(union);
                             if (previousNode == null || previousNode.height > newNode.height) {
-                                metadata.dp.put(unionList, newNode);
+                                metadata.dp.put(union, newNode);
                             }
                         } else {
                             //we can have product
@@ -175,11 +177,10 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
                             Set<TreeNode> union = new HashSet<>();
                             union.addAll(s1);
                             union.addAll(s2);
-                            List<TreeNode> unionList = new LinkedList<>(union);
-                            TreeNode previousNode = metadata.dp.get(unionList);
+                            TreeNode previousNode = metadata.dp.get(union);
                             if (previousNode == null || previousNode.productContained > newNode.productContained
                                     || (previousNode.productContained == newNode.productContained && previousNode.height > newNode.height)) {
-                                metadata.dp.put(unionList, newNode);
+                                metadata.dp.put(union, newNode);
                             }
                         }
                     }
@@ -241,17 +242,18 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         StringBuilder sb = new StringBuilder();
         sb.append("for $tuple in ");
 //        sb.append(metadata.treeNodes.get(0).content);
-        sb.append(metadata.dp.get(metadata.treeNodes).content);
+        Set<TreeNode> allNodes = new HashSet<>(metadata.treeNodes);
+        sb.append(metadata.dp.get(allNodes).content);
         sb.append("\n\n");
         metadata.step = Step.REWRITE_RETURN;
         sb.append(visit(ctx.returnClause()));
         return sb.toString();
     }
 
-    private boolean intersect(List<TreeNode> s1, List<TreeNode> s2) {
+    private boolean intersect(Set<TreeNode> s1, Set<TreeNode> s2) {
         for (TreeNode node1 : s1) {
             for (TreeNode node2 : s2) {
-                if (s1.equals(s2)) {
+                if (node1.equals(node2)) {
                     return true;
                 }
             }
@@ -259,18 +261,22 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         return false;
     }
 
-    private boolean connected(List<TreeNode> s1, List<TreeNode> s2) {
+    private boolean connected(Set<TreeNode> s1, Set<TreeNode> s2) {
         for (TreeNode node1 : s1) {
             for (TreeNode node2 : s2) {
-                if (metadata.connectedTrees.get(s1).contains(s2)) {
-                    return true;
+                for (String root1 : node1.roots) {
+                    for (String root2: node2.roots) {
+                        if (metadata.connectedTrees.get(root1).contains(root2)) {
+                            return true;
+                        }
+                    }
                 }
             }
         }
         return false;
     }
 
-    private List<List<TreeNode>> getSubsets() {
+    private List<Set<TreeNode>> getSubsets() {
         int[] S = new int[metadata.treeNodes.size()];
         for (int i = 0; i < S.length; i++) {
             S[i] = i;
@@ -293,9 +299,9 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         //add empty set
         integerResult.add(new ArrayList<Integer>());
 
-        List<List<TreeNode>> treeNodeResult = new ArrayList<>();
+        List<Set<TreeNode>> treeNodeResult = new ArrayList<>();
         for (List<Integer> integers : integerResult) {
-            List<TreeNode> treeNodes = new LinkedList<>();
+            Set<TreeNode> treeNodes = new HashSet<>();
             for (Integer i : integers) {
                 treeNodes.add(metadata.treeNodes.get(i));
             }
@@ -349,8 +355,8 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
                 if (firstVarEqualVar.contains(secondVar)) {
                     firstJoinAttributes.add(firstVar.substring(1));
                     secondJoinAttributes.add(secondVar.substring(1));
-                    metadata.varEqualVar.get(firstVar).remove(secondVar);
-                    metadata.varEqualVar.get(secondVar).remove(firstVar);
+//                    metadata.varEqualVar.get(firstVar).remove(secondVar);
+//                    metadata.varEqualVar.get(secondVar).remove(firstVar);
                 }
             }
         }
