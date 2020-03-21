@@ -1,0 +1,33 @@
+for $tuple in join ( join (  for $d in doc("j_caesar.xml")//ACT,
+$sd in $d//SCENE,
+$spd in $sd//SPEAKER/text(),
+$sped in $sd//SPEECH
+ where $spd eq "FLAVIUS"
+ return <tuple>{<d>{$d}</d>,<sd>{$sd}</sd>,<spd>{$spd}</spd>,<sped>{$sped}</sped>}</tuple>,
+
+ for $a in doc("j_caesar.xml")//ACT,
+$sa in $a//SCENE,
+$spa in $sa//SPEAKER,
+$spea in $sa//SPEECH
+ return <tuple>{<a>{$a}</a>,<sa>{$sa}</sa>,<spa>{$spa}</spa>,<spea>{$spea}</spea>}</tuple>,
+
+[sd,sped], [sa,spea] ),
+
+join (  for $b in doc("j_caesar.xml")//ACT,
+$sb in $b//SCENE,
+$spb in $sb//SPEAKER/text(),
+$speb in $sb//SPEECH
+ where $spb eq "FLAVIUS"
+ return <tuple>{<b>{$b}</b>,<sb>{$sb}</sb>,<spb>{$spb}</spb>,<speb>{$speb}</speb>}</tuple>,
+
+ for $c in doc("j_caesar.xml")//ACT,
+$sc in $c//SCENE,
+$spc in $sc//SPEAKER,
+$spec in $sc//SPEECH
+ return <tuple>{<c>{$c}</c>,<sc>{$sc}</sc>,<spc>{$spc}</spc>,<spec>{$spec}</spec>}</tuple>,
+
+[sb,speb], [sc,spec] ),
+
+[spa], [spc] )
+
+ return <result>{<title>{$tuple/sa/*/TITLE/text()}</title>}</result>

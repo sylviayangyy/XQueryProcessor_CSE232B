@@ -22,9 +22,10 @@ public class XQueryProcessor {
 //            String optimizedQuery = xQueryOptimizer.visit(tree);
             String optimizedQuery = xQueryBushyOptimizer.visit(tree);
 
-            System.out.println("OptimizedQuery: ");
-            System.out.println(optimizedQuery);
-            System.out.println();
+//            System.out.println("OptimizedQuery: ");
+//            System.out.println(optimizedQuery);
+//            System.out.println();
+            IOHelper.outputRewrittenToFile(optimizedQuery, "RewrittenQuery.txt");
 
             ANTLRInputStream newInput = new ANTLRInputStream(optimizedQuery);
             lexer = new xqueryLexer(newInput);
@@ -32,7 +33,8 @@ public class XQueryProcessor {
             parser = new xqueryParser(tokens);
             tree = parser.xq();
             CustomXQueryVisitor xQueryVisitor = new CustomXQueryVisitor();
-            IOHelper.outputResult(xQueryVisitor.visit(tree));
+//            IOHelper.outputResult(xQueryVisitor.visit(tree));
+            IOHelper.outputResultToFile(xQueryVisitor.visit(tree), "Result.txt");
         } catch (Exception e) {
             e.printStackTrace();
         }
