@@ -9,18 +9,28 @@ import java.io.FileInputStream;
 public class XQueryProcessor {
     public static void main(String[] args) {
         try {
-//            FileInputStream query = new FileInputStream(args[0]);
-            FileInputStream query = new FileInputStream("input.txt");
+            FileInputStream query = new FileInputStream(args[0]);
+//            FileInputStream query = new FileInputStream("input.txt");
 //            String query = "";
+            String label = args[1];
+
             ANTLRInputStream input = new ANTLRInputStream(query);
             xqueryLexer lexer = new xqueryLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             xqueryParser parser = new xqueryParser(tokens);
             ParseTree tree = parser.xq();
-//            CustomXQueryLeftDeepOptimizer xQueryOptimizer = new CustomXQueryLeftDeepOptimizer();
-            CustomXQueryBushyOptimizer xQueryBushyOptimizer = new CustomXQueryBushyOptimizer();
+            String optimizedQuery = "";
+            if (label.equals("-L")) {
+                CustomXQueryLeftDeepOptimizer xQueryOptimizer = new CustomXQueryLeftDeepOptimizer();
+                optimizedQuery = xQueryOptimizer.visit(tree);
+            } else if (label.equals("-B")) {
+                CustomXQueryBushyOptimizer xQueryBushyOptimizer = new CustomXQueryBushyOptimizer();
+                optimizedQuery = xQueryBushyOptimizer.visit(tree);
+            } else {
+                System.err.println("The input label is invalid");
+                return;
+            }
 //            String optimizedQuery = xQueryOptimizer.visit(tree);
-            String optimizedQuery = xQueryBushyOptimizer.visit(tree);
 
 //            System.out.println("OptimizedQuery: ");
 //            System.out.println(optimizedQuery);
