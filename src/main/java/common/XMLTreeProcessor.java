@@ -37,7 +37,7 @@ public class XMLTreeProcessor {
             Document document = docBuilder.parse(new InputSource(inputStream));
             Element root = document.getDocumentElement();
             root.normalize();
-            nodes.add(root);
+            nodes.add(document);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

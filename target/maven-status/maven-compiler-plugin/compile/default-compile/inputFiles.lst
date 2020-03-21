@@ -2,11 +2,13 @@
 /Users/vivian/XQueryProcessor/src/main/java/XPathProcessor.java
 /Users/vivian/XQueryProcessor/src/main/java/xquery/CustomXQueryVisitor.java
 /Users/vivian/XQueryProcessor/src/main/java/xquery/xqueryParser.java
+/Users/vivian/XQueryProcessor/src/main/java/xquery/CustomXQueryLeftDeepOptimizer.java
 /Users/vivian/XQueryProcessor/src/main/java/XQueryProcessor.java
 /Users/vivian/XQueryProcessor/src/main/java/common/XMLTreeProcessor.java
 /Users/vivian/XQueryProcessor/src/main/java/xpath/xpathParser.java
 /Users/vivian/XQueryProcessor/src/main/java/xquery/xqueryVisitor.java
 /Users/vivian/XQueryProcessor/src/main/java/xpath/CustomXPathVisitor.java
+/Users/vivian/XQueryProcessor/src/main/java/xquery/CustomXQueryBushyOptimizer.java
 /Users/vivian/XQueryProcessor/src/main/java/xpath/xpathListener.java
 /Users/vivian/XQueryProcessor/src/main/java/xpath/xpathLexer.java
 /Users/vivian/XQueryProcessor/src/main/java/xpath/xpathBaseVisitor.java
@@ -14,6 +16,5 @@
 /Users/vivian/XQueryProcessor/src/main/java/xpath/xpathVisitor.java
 /Users/vivian/XQueryProcessor/src/main/java/xquery/xqueryListener.java
 /Users/vivian/XQueryProcessor/src/main/java/IO/IOHelper.java
-/Users/vivian/XQueryProcessor/src/main/java/xquery/CustomXQueryOptimizer.java
 /Users/vivian/XQueryProcessor/src/main/java/xquery/xqueryBaseListener.java
 /Users/vivian/XQueryProcessor/src/main/java/xquery/xqueryLexer.java
