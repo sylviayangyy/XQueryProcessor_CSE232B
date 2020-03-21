@@ -1,5 +1,7 @@
 package xquery;
 
+import javafx.util.Pair;
+
 import java.util.*;
 
 public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
@@ -20,8 +22,11 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         List<String> varsJoined = new LinkedList<>();
         // use to describe graph
         List<String[]> edges = new LinkedList<>();
+        //each treeNode is a table/relation
         List<TreeNode> treeNodes = new LinkedList<>();
         Map<String, List<String>> connectedTrees = new HashMap<>();
+        //dp table, map: subset and its optimal join tree along with cartesian product num
+        Map<List<TreeNode>, TreeNode> dp = new HashMap<>();
     }
 
     private class TreeNode {
@@ -30,6 +35,7 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         List<String> roots;
         String content;
         List<String> vars = new LinkedList<>();
+        int productContained = 0;
 
         TreeNode(List<String> roots, String content, List<String> vars) {
             this.roots = roots;
@@ -37,11 +43,12 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
             this.vars = vars;
         }
 
-        TreeNode(int height, List<String> roots, String content, List<String> vars) {
+        TreeNode(int height, List<String> roots, String content, List<String> vars, int productContained) {
             this.height = height;
             this.roots = roots;
             this.content = content;
             this.vars = vars;
+            this.productContained = productContained;
         }
     }
 
@@ -119,91 +126,212 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         metadata.treeNodes = getTreeNodes();
         //how many cartesian products we must have
         metadata.productNum = countComponents(metadata.rootsAndAllVariables.keySet().size(), metadata.edges) - 1;
-        while (metadata.treeNodes.size()>1) {
-            System.out.println(metadata.treeNodes.size());
-            List<TreeNode> treeNodes = metadata.treeNodes;
-            String minJoin = "";
-            int minHeight = Integer.MAX_VALUE;
-            TreeNode joinedTreeNode1 = treeNodes.get(0);
-            TreeNode joinedTreeNode2 = treeNodes.get(0);
-            TreeNode newTreeNode = treeNodes.get(0);
-            for (int i=0; i<treeNodes.size(); i++) {
-                for (int j=i+1; j<treeNodes.size(); j++) {
-                    TreeNode treeNode1 = treeNodes.get(i);
-                    TreeNode treeNode2 = treeNodes.get(j);
-                    int height = Math.max(treeNode1.height, treeNode2.height) + 1;
-                    if (height < minHeight) {
-                        boolean inConnectedTree = false;
-                        for (String root1 : treeNode1.roots) {
-                            for (String root2 : treeNode2.roots) {
-                                if (metadata.connectedTrees.get(root1).contains(root2)) {
-                                    inConnectedTree = true;
-                                    break;
-                                }
-                            }
-                            if (inConnectedTree) {
-                                break;
-                            }
+
+        //for each Ri ∈ R
+        //DP[{Ri}] = Ri
+        for (TreeNode root : metadata.treeNodes) {
+            List<TreeNode> subset = new LinkedList<>();
+            subset.add(root);
+            metadata.dp.put(subset, root);
+        }
+
+        List<List<TreeNode>> subsets = getSubsets();
+        for (int s = 2; s <= metadata.treeNodes.size(); s++) {
+            for (List<TreeNode> s1 : subsets) {
+                for (List<TreeNode> s2 : subsets) {
+                    if (s1.size() + s2.size() == s) {
+                        if (intersect(s1, s2)) {
+                            continue;
                         }
-                        if (inConnectedTree || metadata.productNum>0) {
-                            minHeight = height;
-                            minJoin = joinTwoTreeNode(treeNode1, treeNode2);
-                            joinedTreeNode1 = treeNode1;
-                            joinedTreeNode2 = treeNode2;
-                            List<String> roots = new LinkedList<>();
-                            roots.addAll(joinedTreeNode1.roots);
-                            roots.addAll(joinedTreeNode2.roots);
-                            List<String> vars = new LinkedList<>();
-                            vars.addAll(joinedTreeNode1.vars);
-                            vars.addAll(joinedTreeNode2.vars);
-                            newTreeNode = new TreeNode(height, roots, minJoin, vars);
-                            if (!inConnectedTree) {
-                                metadata.productNum--;
+                        if (metadata.productNum == 0) {
+                            if (!connected(s1, s2)) {
+                                continue;
+                            }
+                            TreeNode p1 = metadata.dp.get(s1);
+                            TreeNode p2 = metadata.dp.get(s2);
+                            if (p1 == null || p2 == null) {
+                                continue;
+                            }
+                            TreeNode newNode = joinTwoTreeNode(p1, p2);
+                            Set<TreeNode> union = new HashSet<>();
+                            union.addAll(s1);
+                            union.addAll(s2);
+                            List<TreeNode> unionList = new LinkedList<>(union);
+                            TreeNode previousNode = metadata.dp.get(unionList);
+                            if (previousNode == null || previousNode.height > newNode.height) {
+                                metadata.dp.put(unionList, newNode);
+                            }
+                        } else {
+                            //we can have product
+                            TreeNode p1 = metadata.dp.get(s1);
+                            TreeNode p2 = metadata.dp.get(s2);
+                            if (p1 == null || p2 == null) {
+                                continue;
+                            }
+                            TreeNode newNode = joinTwoTreeNode(p1, p2);
+                            if (newNode.productContained > metadata.productNum) {
+                                continue;
+                            }
+                            Set<TreeNode> union = new HashSet<>();
+                            union.addAll(s1);
+                            union.addAll(s2);
+                            List<TreeNode> unionList = new LinkedList<>(union);
+                            TreeNode previousNode = metadata.dp.get(unionList);
+                            if (previousNode == null || previousNode.productContained > newNode.productContained
+                                    || (previousNode.productContained == newNode.productContained && previousNode.height > newNode.height)) {
+                                metadata.dp.put(unionList, newNode);
                             }
                         }
                     }
                 }
             }
-            treeNodes.remove(joinedTreeNode1);
-            treeNodes.remove(joinedTreeNode2);
-            treeNodes.add(newTreeNode);
-            metadata.treeNodes = treeNodes;
         }
 
-//        String first = getJoinSubQuery();
-//        treeNum--;
-//        while (treeNum >= 1) {
-//            List<String> firstJoinAttributes = new LinkedList<>();
-//            List<String> secondJoinAttributes = new LinkedList<>();
-//            List<String> secondVars = metadata.rootsAndAllVariables.entrySet().iterator().next().getValue();
-//            for (String firstVar : metadata.varsJoined) {
-//                Set<String> firstVarEqualVar = metadata.varEqualVar.getOrDefault(firstVar, new HashSet<>());
-//                if (firstVarEqualVar.size() == 0) {
-//                    continue;
-//                }
-//                for (String secondVar : secondVars) {
-//                    if (firstVarEqualVar.contains(secondVar)) {
-//                        firstJoinAttributes.add(firstVar.substring(1));
-//                        secondJoinAttributes.add(secondVar.substring(1));
-//                        metadata.varEqualVar.get(firstVar).remove(secondVar);
-//                        metadata.varEqualVar.get(secondVar).remove(firstVar);
+//        while (metadata.treeNodes.size()>1) {
+//            System.out.println(metadata.treeNodes.size());
+//            List<TreeNode> treeNodes = metadata.treeNodes;
+//            String minJoin = "";
+//            int minHeight = Integer.MAX_VALUE;
+//            TreeNode joinedTreeNode1 = treeNodes.get(0);
+//            TreeNode joinedTreeNode2 = treeNodes.get(0);
+//            TreeNode newTreeNode = treeNodes.get(0);
+//            for (int i=0; i<treeNodes.size(); i++) {
+//                for (int j=i+1; j<treeNodes.size(); j++) {
+//                    TreeNode treeNode1 = treeNodes.get(i);
+//                    TreeNode treeNode2 = treeNodes.get(j);
+//                    int height = Math.max(treeNode1.height, treeNode2.height) + 1;
+//                    if (height < minHeight) {
+//                        boolean inConnectedTree = false;
+//                        for (String root1 : treeNode1.roots) {
+//                            for (String root2 : treeNode2.roots) {
+//                                if (metadata.connectedTrees.get(root1).contains(root2)) {
+//                                    inConnectedTree = true;
+//                                    break;
+//                                }
+//                            }
+//                            if (inConnectedTree) {
+//                                break;
+//                            }
+//                        }
+//                        if (inConnectedTree || metadata.productNum>0) {
+//                            minHeight = height;
+//                            minJoin = joinTwoTreeNode(treeNode1, treeNode2);
+//                            joinedTreeNode1 = treeNode1;
+//                            joinedTreeNode2 = treeNode2;
+//                            List<String> roots = new LinkedList<>();
+//                            roots.addAll(joinedTreeNode1.roots);
+//                            roots.addAll(joinedTreeNode2.roots);
+//                            List<String> vars = new LinkedList<>();
+//                            vars.addAll(joinedTreeNode1.vars);
+//                            vars.addAll(joinedTreeNode2.vars);
+//                            newTreeNode = new TreeNode(height, roots, minJoin, vars);
+//                            if (!inConnectedTree) {
+//                                metadata.productNum--;
+//                            }
+//                        }
 //                    }
 //                }
 //            }
-//            String second = getJoinSubQuery();
-//            first = "join ( \n" + first + ",\n\n" + second + ",\n\n [" + String.join(",", firstJoinAttributes) + "], [" + String.join(",", secondJoinAttributes) + "])";
-//            treeNum--;
+//            treeNodes.remove(joinedTreeNode1);
+//            treeNodes.remove(joinedTreeNode2);
+//            treeNodes.add(newTreeNode);
+//            metadata.treeNodes = treeNodes;
 //        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("for $tuple in ");
-        sb.append(metadata.treeNodes.get(0).content);
+//        sb.append(metadata.treeNodes.get(0).content);
+        sb.append(metadata.dp.get(metadata.treeNodes).content);
         sb.append("\n\n");
         metadata.step = Step.REWRITE_RETURN;
         sb.append(visit(ctx.returnClause()));
         return sb.toString();
     }
 
-    private String joinTwoTreeNode(TreeNode treeNode1, TreeNode treeNode2) {
+    private boolean intersect(List<TreeNode> s1, List<TreeNode> s2) {
+        for (TreeNode node1 : s1) {
+            for (TreeNode node2 : s2) {
+                if (s1.equals(s2)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean connected(List<TreeNode> s1, List<TreeNode> s2) {
+        for (TreeNode node1 : s1) {
+            for (TreeNode node2 : s2) {
+                if (metadata.connectedTrees.get(s1).contains(s2)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private List<List<TreeNode>> getSubsets() {
+        int[] S = new int[metadata.treeNodes.size()];
+        for (int i = 0; i < S.length; i++) {
+            S[i] = i;
+        }
+        ArrayList<ArrayList<Integer>> integerResult = new ArrayList<>();
+        for (int i = 0; i < S.length; i++) {
+            ArrayList<ArrayList<Integer>> temp = new ArrayList<ArrayList<Integer>>();
+            for (ArrayList<Integer> a : integerResult) {
+                temp.add(new ArrayList<Integer>(a));
+            }
+            for (ArrayList<Integer> a : temp) {
+                a.add(S[i]);
+            }
+            ArrayList<Integer> single = new ArrayList<Integer>();
+            single.add(S[i]);
+            temp.add(single);
+            integerResult.addAll(temp);
+        }
+
+        //add empty set
+        integerResult.add(new ArrayList<Integer>());
+
+        List<List<TreeNode>> treeNodeResult = new ArrayList<>();
+        for (List<Integer> integers : integerResult) {
+            List<TreeNode> treeNodes = new LinkedList<>();
+            for (Integer i : integers) {
+                treeNodes.add(metadata.treeNodes.get(i));
+            }
+            treeNodeResult.add(treeNodes);
+        }
+        return treeNodeResult;
+    }
+
+    private TreeNode joinTwoTreeNode(TreeNode treeNode1, TreeNode treeNode2) {
+        int height = Math.max(treeNode1.height, treeNode2.height) + 1;
+
+        List<String> roots = new LinkedList<>();
+        roots.addAll(treeNode1.roots);
+        roots.addAll(treeNode2.roots);
+
+        List<String> vars = new LinkedList<>();
+        vars.addAll(treeNode1.vars);
+        vars.addAll(treeNode2.vars);
+
+        int productContained = treeNode1.productContained + treeNode2.productContained;
+        boolean inConnectedTree = false;
+        for (String root1 : treeNode1.roots) {
+            for (String root2 : treeNode2.roots) {
+                if (metadata.connectedTrees.get(root1).contains(root2)) {
+                    inConnectedTree = true;
+                    break;
+                }
+            }
+            if (inConnectedTree) {
+                break;
+            }
+        }
+        if (!inConnectedTree) {
+            productContained++;
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("join ( ");
         sb.append(treeNode1.content);
@@ -231,7 +359,8 @@ public class CustomXQueryBushyOptimizer extends xqueryBaseVisitor<String> {
         sb.append("], [");
         sb.append(String.join(",", secondJoinAttributes));
         sb.append("] )");
-        return sb.toString();
+        String content = sb.toString();
+        return new TreeNode(height, roots, content, vars, productContained);
     }
 
     private List<TreeNode> getTreeNodes() {
