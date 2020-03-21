@@ -1,0 +1,13 @@
+# 49_CSE232BWI20
+## For milestone4:
+
+### The jar file is under the root directory of CSE232BWI20 repo.
+
+### Input:  
+java -jar XQueryOptimized.jar input.txt -L  
+OR  
+java -jar XQueryOptimized.jar input.txt -B  
+### Results:  
+The rewitten query would be in RewrittenQuery.txt.  
+The final result would be in Result.txt.  
+(Both of them are under the root directory)
